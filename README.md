@@ -45,4 +45,4 @@ php artisan serve
 | Kasir | kasir@demo.com | password |
 | Dapur | dapur@demo.com | password |
 
-> Customer tidak perlu login — cukup scan QR Code permeja.
+> Customer tidak perlu login — cukup scan QR Code.
