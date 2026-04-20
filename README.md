@@ -5,8 +5,8 @@ Sistem pemesanan digital berbasis QR Code untuk UMKM kuliner. Customer scan QR d
 ## Tech Stack
 
 - **Laravel 11** — Backend
-- **Blade + Alpine.js** — Frontend
-- **TailwindCSS** — Styling
+- **Blade** — Frontend
+- **TailwindCSS + bootstrap** — Styling
 - **Laravel Reverb** — Realtime / WebSocket
 - **MySQL** — Database
 
