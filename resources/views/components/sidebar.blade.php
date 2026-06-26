@@ -15,7 +15,7 @@
         </li>
         <li><h3>MASTER DATA</h3></li>
         <li>
-            <a class="side-menu__item" href="#"><i class="side-menu__icon fe fe-grid"></i><span class="side-menu__label">Kategori</span></a>
+            <a class="side-menu__item" href="{{ route('categories.index') }}"><i class="side-menu__icon fe fe-grid"></i><span class="side-menu__label">Categories</span></a>
         </li>
         <li>
             <a class="side-menu__item" href="#"><i class="side-menu__icon fa fa-coffee"></i><span class="side-menu__label">Menu</span></a>
