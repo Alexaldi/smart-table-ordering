@@ -13,9 +13,12 @@
         <li class="slide">
             <a class="side-menu__item"  data-bs-toggle="slide" href="index.html"><i class="side-menu__icon fe fe-home"></i><span class="side-menu__label">Dashboard</span></a>
         </li>
-        <li><h3>Widgets & Maps</h3></li>
+        <li><h3>MASTER DATA</h3></li>
         <li>
-            <a class="side-menu__item" href="widgets.html"><i class="side-menu__icon fe fe-grid"></i><span class="side-menu__label">Widgets</span></a>
+            <a class="side-menu__item" href="#"><i class="side-menu__icon fe fe-grid"></i><span class="side-menu__label">Kategori</span></a>
+        </li>
+        <li>
+            <a class="side-menu__item" href="#"><i class="side-menu__icon fa fa-coffee"></i><span class="side-menu__label">Menu</span></a>
         </li>
     </ul>
 </aside>
