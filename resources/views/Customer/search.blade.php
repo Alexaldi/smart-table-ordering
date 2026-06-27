@@ -1,125 +1,485 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cari Menu</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cari Menu</title>
 
-  <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <!-- Bootstrap Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="{{ asset('customer/assets/css/search.css') }}" />
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #fff;
+            margin: 0;
+        }
+
+        .search-header {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 12px 0;
+            z-index: 1000;
+        }
+
+        .back-btn {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            border-radius: 50%;
+            color: #222;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #e8e8e8;
+            color: #000;
+        }
+
+        .back-btn i {
+            font-size: 18px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 16px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .search-input {
+            padding: 12px 16px 12px 44px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 14px;
+            background: #f9f9f9;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #d4a574;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.18);
+        }
+
+        .search-input::placeholder {
+            color: #999;
+        }
+
+        .cart-link {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #222;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .badge-cart {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: #fff;
+            border-radius: 50%;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 5px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            font-weight: 700;
+        }
+
+        .menu-list-container {
+            background: #fff;
+            min-height: calc(100vh - 80px);
+            padding-bottom: 40px;
+        }
+
+        .section-header {
+            padding: 24px 0 16px;
+            margin-bottom: 8px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0;
+        }
+
+        .section-meta {
+            color: #777;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .menu-list {
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .menu-list-item {
+            display: flex;
+            gap: 16px;
+            padding: 20px 0;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: flex-start;
+            transition: background 0.2s;
+        }
+
+        .menu-list-item:hover {
+            background: #fafafa;
+            margin: 0 -15px;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+
+        .menu-thumb {
+            flex-shrink: 0;
+            width: 90px;
+            height: 90px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .menu-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .placeholder-visual {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 4px;
+            background: linear-gradient(135deg, #f6eee4, #ffffff);
+            color: #b58b5a;
+            text-align: center;
+        }
+
+        .placeholder-visual i {
+            font-size: 1.55rem;
+        }
+
+        .placeholder-visual span {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 0 6px;
+        }
+
+        .menu-info {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .menu-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            line-height: 1.3;
+        }
+
+        .menu-category {
+            display: inline-flex;
+            align-items: center;
+            color: #d4a574;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .menu-desc {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .menu-price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .price-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .discounted-price {
+            font-size: 15px;
+            font-weight: 700;
+            color: #222;
+        }
+
+        .stock {
+            color: #777;
+            font-size: 12px;
+        }
+
+        .btn-add {
+            flex-shrink: 0;
+            padding: 8px 24px;
+            background: #fff;
+            border: 1.5px solid #d4a574;
+            border-radius: 8px;
+            color: #d4a574;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-add:hover {
+            background: #d4a574;
+            color: #fff;
+        }
+
+        .empty-state {
+            border-top: 1px solid #f0f0f0;
+            padding: 56px 18px;
+            text-align: center;
+            color: #777;
+        }
+
+        .empty-state i {
+            display: block;
+            font-size: 48px;
+            color: #d4a574;
+            margin-bottom: 12px;
+        }
+
+        .empty-state h5 {
+            color: #222;
+            font-weight: 700;
+        }
+
+        .btn-browse {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 20px;
+            background: #222;
+            color: #fff;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-browse:hover {
+            background: #d4a574;
+            color: #fff;
+        }
+
+        @media (max-width: 576px) {
+            .menu-list-container {
+                padding-bottom: 20px;
+            }
+
+            .section-header {
+                padding: 16px 0 12px;
+            }
+
+            .section-title {
+                font-size: 16px;
+            }
+
+            .menu-list-item {
+                padding: 16px 0;
+                gap: 12px;
+            }
+
+            .menu-thumb {
+                width: 75px;
+                height: 75px;
+            }
+
+            .menu-name {
+                font-size: 14px;
+            }
+
+            .menu-desc {
+                font-size: 12px;
+                margin-bottom: 8px;
+            }
+
+            .discounted-price {
+                font-size: 14px;
+            }
+
+            .btn-add {
+                padding: 6px 16px;
+                font-size: 12px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .menu-thumb {
+                width: 100px;
+                height: 100px;
+            }
+
+            .menu-name {
+                font-size: 16px;
+            }
+
+            .menu-desc {
+                font-size: 14px;
+            }
+
+            .btn-add {
+                padding: 8px 28px;
+            }
+        }
+    </style>
 </head>
+
 <body>
+    <header class="search-header sticky-top">
+        <div class="container">
+            <div class="d-flex align-items-center gap-3">
+                <a href="{{ route('customer-menu.index', ['token' => $token]) }}" class="back-btn" aria-label="Kembali ke menu">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
 
-  <!-- Search Header -->
-  <header class="search-header sticky-top">
-    <div class="container">
-      <div class="d-flex align-items-center gap-3">
-        
-        <!-- Back Button -->
-        <a href="{{ route('customer-menu.index') }}" class="back-btn">
-          <i class="bi bi-arrow-left"></i>
-        </a>
+                <form action="{{ route('customer-menu.search', ['token' => $token]) }}" method="GET" class="search-box flex-grow-1">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" name="q" value="{{ $keyword }}" class="form-control search-input" placeholder="What are you craving today?" autofocus>
+                </form>
 
-        <!-- Search Input -->
-        <div class="search-box flex-grow-1">
-          <i class="bi bi-search search-icon"></i>
-          <input 
-            type="text" 
-            class="form-control search-input" 
-            placeholder="What are you craving today?"
-          />
-        </div>
-
-      </div>
-    </div>
-  </header>
-
-  <!-- Menu List Container -->
-  <div class="menu-list-container">
-    <div class="container">
-      
-      <!-- Section Title -->
-      <div class="section-header">
-        <h5 class="section-title">MENU DISKON</h5>
-      </div>
-
-      <!-- Menu Items -->
-      <div class="menu-list">
-        
-        <!-- Menu Item 1 -->
-        <div class="menu-list-item">
-          <div class="menu-thumb">
-            <img src="img/espresso.webp" alt="Espresso">
-          </div>
-          <div class="menu-info">
-            <h6 class="menu-name">
-              Espresso 
-              <span class="discount-badge">-20%</span>
-            </h6>
-            <p class="menu-desc">Kopi espresso murni dengan rasa yang kuat dan bold, perfect untuk memulai harimu.</p>
-            <div class="menu-price-row">
-              <div class="price-wrapper">
-                <span class="original-price">Rp22.500</span>
-                <span class="discounted-price">Rp18.000</span>
-              </div>
-              <button class="btn-add">Add</button>
+                <a href="{{ route('customer-menu.cart', ['token' => $token]) }}" class="cart-link position-relative" aria-label="Keranjang">
+                    <i class="bi bi-bag"></i>
+                    @if ($cartCount > 0)
+                        <span class="badge-cart">{{ $cartCount }}</span>
+                    @endif
+                </a>
             </div>
-          </div>
         </div>
+    </header>
 
-        <!-- Menu Item 2 -->
-        <div class="menu-list-item">
-          <div class="menu-thumb">
-            <img src="img/capucino.jpg" alt="Cappuccino">
-          </div>
-          <div class="menu-info">
-            <h6 class="menu-name">
-              Cappuccino 
-              <span class="discount-badge">-15%</span>
-            </h6>
-            <p class="menu-desc">Espresso dengan susu steamed dan foam yang creamy, taburan coklat di atasnya.</p>
-            <div class="menu-price-row">
-              <div class="price-wrapper">
-                <span class="original-price">Rp33.000</span>
-                <span class="discounted-price">Rp28.000</span>
-              </div>
-              <button class="btn-add">Add</button>
+    <main class="menu-list-container">
+        <div class="container">
+            <div class="section-header">
+                <h5 class="section-title">
+                    @if ($keyword)
+                        Hasil Pencarian
+                    @else
+                        Semua Menu
+                    @endif
+                </h5>
+                <p class="section-meta">
+                    @if ($keyword)
+                        "{{ $keyword }}" - {{ $menuItems->count() }} menu ditemukan
+                    @else
+                        {{ $menuItems->count() }} menu tersedia
+                    @endif
+                </p>
             </div>
-          </div>
+
+            @if ($menuItems->count() > 0)
+                <div class="menu-list">
+                    @foreach ($menuItems as $menuItem)
+                        @php
+                            $imageUrl = $menuItem->image_url;
+
+                            if ($imageUrl && \Illuminate\Support\Str::startsWith($imageUrl, ['http://', 'https://'])) {
+                                $imageSrc = $imageUrl;
+                            } elseif ($imageUrl && \Illuminate\Support\Str::startsWith($imageUrl, 'storage/')) {
+                                $imageSrc = asset($imageUrl);
+                            } elseif ($imageUrl) {
+                                $imageSrc = asset('storage/' . $imageUrl);
+                            } else {
+                                $imageSrc = null;
+                            }
+                        @endphp
+
+                        <article class="menu-list-item">
+                            <div class="menu-thumb">
+                                @if ($imageSrc)
+                                    <img src="{{ $imageSrc }}" alt="{{ $menuItem->name }}">
+                                @else
+                                    <div class="placeholder-visual">
+                                        <i class="bi bi-cup-hot"></i>
+                                        <span>{{ $menuItem->name }}</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="menu-info">
+                                <h6 class="menu-name">{{ $menuItem->name }}</h6>
+                                <div class="menu-category">{{ $menuItem->category->name ?? 'Menu' }}</div>
+                                <p class="menu-desc">{{ $menuItem->description ?: 'Menu favorit coffee shop kami.' }}</p>
+                                <div class="menu-price-row">
+                                    <div class="price-wrapper">
+                                        <span class="discounted-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</span>
+                                        <span class="stock">Stock {{ $menuItem->stock }}</span>
+                                    </div>
+
+                                    <form action="{{ route('customer-menu.cart.add', ['token' => $token]) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="menu_item_id" value="{{ $menuItem->id }}">
+                                        <input type="hidden" name="quantity" value="1">
+                                        <input type="hidden" name="notes" value="">
+                                        <button type="submit" class="btn-add">Add</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-state">
+                    <i class="bi bi-search"></i>
+                    <h5 class="mb-2">Menu tidak ditemukan</h5>
+                    <p class="mb-4">Coba kata kunci lain atau lihat semua menu dari meja {{ $table->table_number }}.</p>
+                    <a href="{{ route('customer-menu.index', ['token' => $token]) }}" class="btn-browse">
+                        <i class="bi bi-grid"></i> Lihat Menu
+                    </a>
+                </div>
+            @endif
         </div>
+    </main>
 
-        <!-- Menu Item 3 -->
-        <div class="menu-list-item">
-          <div class="menu-thumb">
-            <img src="img/caffee_latte.jpg" alt="Cafe Latte">
-          </div>
-          <div class="menu-info">
-            <h6 class="menu-name">
-              Cafe Latte 
-              <span class="discount-badge">-10%</span>
-            </h6>
-            <p class="menu-desc">Perpaduan sempurna espresso dan susu steamed dengan latte art yang indah.</p>
-            <div class="menu-price-row">
-              <div class="price-wrapper">
-                <span class="original-price">Rp33.000</span>
-                <span class="discounted-price">Rp30.000</span>
-              </div>
-              <button class="btn-add">Add</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
