@@ -5,6 +5,7 @@ use App\Http\Controllers\TestCommitController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DiningTableController;
+use App\Http\Controllers\CustomerMenuController;
 
 Route::get('/test-commit', [TestCommitController::class, 'index']);
 
@@ -27,3 +28,11 @@ Route::post('menu/import/store', [MenuController::class, 'importStore'])
 Route::resource('categories', CategoryController::class);
 
 Route::resource('tables', DiningTableController::class);
+
+// Customer Routes
+Route::get('/customer-menu', [CustomerMenuController::class, 'index'])
+    ->name('customer-menu.index');
+Route::get('/customer-menu/search', [CustomerMenuController::class, 'search'])
+    ->name('customer-menu.search');
+Route::get('/customer-menu/cart', [CustomerMenuController::class, 'cart'])
+    ->name('customer-menu.cart');
