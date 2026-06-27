@@ -124,4 +124,65 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+/* Fungsi Download QR Code sebagai Gambar PNG */
+function printQR(tableName, containerId) {
+    const container = document.getElementById(containerId);
+    const svg = container.querySelector('svg');
+    
+    if (!svg) {
+        alert('QR Code not found.');
+        return;
+    }
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const URL = window.URL || window.webkitURL || window;
+    const blobURL = URL.createObjectURL(svgBlob);
+    
+    const image = new Image();
+    image.onload = function () {
+        const padding = 40;
+        const qrSize = 400;
+        const textAreaHeight = 80;
+        const canvasWidth = qrSize + (padding * 2);
+        const canvasHeight = qrSize + (padding * 2) + textAreaHeight;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        const ctx = canvas.getContext('2d');
+        
+        // Background putih
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // QR Code (dengan padding)
+        ctx.drawImage(image, padding, padding, qrSize, qrSize);
+
+        // Nama meja
+        ctx.fillStyle = '#111111';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(tableName, canvasWidth / 2, qrSize + padding + 35);
+
+        // Teks scan
+        ctx.fillStyle = '#555555';
+        ctx.font = '16px Arial';
+        ctx.fillText('Scan to order', canvasWidth / 2, qrSize + padding + 60);
+        
+        // Download
+        const pngUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        const cleanName = tableName.replace(/\s+/g, '_');
+        
+        downloadLink.href = pngUrl;
+        downloadLink.download = `QR_${cleanName}.png`;
+        
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    };
+    
+    image.src = blobURL;
+}
 </script>
