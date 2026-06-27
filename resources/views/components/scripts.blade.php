@@ -49,3 +49,79 @@
 
 <!-- CUSTOM JS -->
 <script src="{{ asset('assets/js/custom.js') }}"></script>
+
+<!-- sweetalert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+(function() {
+    const success = @json(session('success'));
+    const status = @json(session('status'));
+    const errorMsg = @json(session('error'));
+    const firstError = @json($errors->first() ?? null);
+
+    const message = success ?? status;
+
+    if (message) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: success,
+            confirmButtonText: 'OK'
+        });
+    }
+
+    if (errorMsg) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal',
+            text: errorMsg,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+        });
+
+    } else if (firstError) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal',
+            text: firstError,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+        });
+    }
+})();
+
+/* Delete Confirmation */
+document.addEventListener('DOMContentLoaded', function () {
+    const deleteForms = document.querySelectorAll('.delete-form');
+
+    deleteForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const type = form.dataset.type || 'data ini';
+
+            Swal.fire({
+                title: `Are you sure you want to delete ${type}?`,
+                text: "This action cannot be undone.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+
+</script>
