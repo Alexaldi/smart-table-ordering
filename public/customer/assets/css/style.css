@@ -1,0 +1,458 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f0f0f0; 
+    margin: 0;
+    padding: 0;
+}
+
+/* start Setup Header Utama */
+.cafe-header {
+    height: 60vh; 
+    position: relative; 
+    overflow: hidden; 
+}
+
+/* Jadikan Gambar sebagai Background dengan Jarak (Tidak Full Kanan-Kiri) */
+.cafe-header .img {
+    position: absolute;
+    top: 15px;      
+    left: 15px;    
+    right: 15px;    
+    bottom: 15px;  
+    width: auto;    
+    height: auto;   
+    z-index: 1; 
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+/* Posisi gambar tetap sama seperti sebelumnya */
+.cafe-header .img .logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+    object-position: center 90%; 
+    display: block;
+}
+
+.cafe-header .container-fluid {
+    height: 100%; 
+    position: relative;
+    z-index: 2; 
+}
+
+/* Icon tetap di kanan atas, tapi posisinya disesuaikan biar ada di dalam area gambar */
+.cafe-header .container-fluid > div:nth-child(2) {
+    position: absolute;
+    top: 30px; 
+    right: 30px; 
+    z-index: 3; 
+}
+
+/* Styling Icon & Badge (Tetap sama) */
+.btn-icon {
+    background-color: #ffffff !important; 
+    border: none;
+    border-radius: 50%; 
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); 
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #333333; 
+}
+
+.btn-icon:hover {
+    background-color: #f8f9fa !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    color: #000000;
+}
+
+.btn-icon i {
+    font-size: 1.1rem;
+}
+
+.badge-cart {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background-color: #e74c3c; 
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid #ffffff; 
+}
+
+.icon-container {
+  margin-right: 15px;
+}
+
+/* End Header */
+
+
+/* start Card Tempat/Jadwal */
+.card-tempat {
+    background-color: #f9f9f9;
+    border: 1px solid #cdcdcd;
+    border-radius: 20px 20px 0px 0px;
+    padding: 20px;
+    /* margin-bottom: 20px; */
+    display: flex;
+    align-items: center;         
+    justify-content: space-between; /* pemisahan antara teks dan icon panah */
+    transition: all 0.3s ease;
+}
+
+.card-info h4 {
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333333;
+}
+
+.card-info p {
+    margin-bottom: 0;
+    color: #9b9b9b;
+    font-size: 0.8rem;
+}
+
+.card-arrow {
+    color: #6c757d; 
+    font-size: 1.5rem; 
+    transition: all 0.3s ease;
+}
+
+/* Animasi panah geser ke kanan pas hover */
+a:hover .card-arrow {
+    color: #333333; 
+    transform: translateX(5px);
+}
+/* end Card Tempat/Jadwal */
+
+/* start Card tabel */
+.card-tabel.is-stuck {
+  border-radius: 0;
+}
+.sticky-card-tabel {
+  position: sticky;
+  top: 0;
+  z-index: 101;
+}
+
+.card-tabel {
+  background-color: #47444a;
+  border: 1px solid #cdcdcd;
+  border-radius: 0px 0px 20px 20px;
+  padding: 5px;
+  margin-bottom: 30px;
+}
+
+.card-tabel h4 {
+  color: #ffffff;
+  margin-bottom: 0;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+/* end Card tabel */
+
+/* Start Category Navigation */
+.category-header-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 8px;
+  margin-bottom: 24px;
+}
+
+.category-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.category-line {
+  flex-grow: 1;
+  height: 1px;
+  background-color: #e0e0e0;
+  min-width: 50px;
+}
+
+.category-wrapper {
+  background: #f9f9f9;
+  padding: 0;
+  border-bottom: 1px solid #d6d6d6;
+  position: sticky;
+  top: 30px; 
+  z-index: 100;
+}
+
+.category-list {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.category-list::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-btn {
+  flex-shrink: 0;
+  padding: 16px 24px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  border-radius: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.cat-btn:hover {
+  color: #222;
+  background: #f9f9f9;
+}
+
+/* State aktif - dengan underline */
+.cat-btn.active {
+  color: #222;
+  border-bottom-color: #222;
+  font-weight: 600;
+}
+/* End Category Navigation */
+
+/* Start Menu Card */
+/* Badge Diskon di Gambar */
+.discount-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #ff4757;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 2;
+}
+
+/* Wrapper Harga */
+.menu-price-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* Harga Asli (Dicoret) */
+.original-price {
+  font-size: 12px;
+  color: #999;
+  text-decoration: line-through;
+  font-weight: 400;
+}
+
+/* Harga Diskon (Merah) */
+.discounted-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ff4757;
+}
+
+/* Update menu-price untuk card yang nggak ada diskon */
+.menu-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 12px;
+}
+.menu-section {
+  background: #f9f9f9;
+}
+
+.menu-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s;
+}
+
+.menu-card:hover {
+  border-color: #ddd;
+}
+
+.menu-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  position: relative;
+  background: #f5f5f5;
+}
+
+.menu-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.menu-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.menu-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 4px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.menu-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 12px;
+}
+
+/* Tombol Tambah */
+.btn-tambah {
+  margin-top: auto;
+  width: 100%;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #d4a574;
+  color: #d4a574;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-tambah:hover {
+  background: #d4a574;
+  color: #fff;
+}
+/* End Menu Card */
+
+/* Modal tweaks */
+.modal-content {
+  border-radius: 5px 5px 12px 12px;
+  overflow: hidden;
+}
+
+/* Gambar Full Width */
+.modal-image-wrapper {
+  width: 100%;
+  line-height: 0; /* Hilangkan gap bawah gambar */
+}
+
+.modal-image-wrapper img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* Tombol X Overlay */
+.btn-close-modal {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background: #fff;
+  transform: scale(1.1);
+}
+
+.btn-close-modal i {
+  font-size: 14px;
+  color: #222;
+}
+
+/* Quantity buttons */
+.btn-outline-secondary:hover {
+  border-color: #6c757d;
+}
+
+.title-button{
+  font-size: 14px;
+}
+
+/* Responsive modal untuk desktop */
+@media (min-width: 768px) {
+  .modal-dialog {
+    max-width: 450px;
+  }
+}
+
+/* Start Responsive Tweaks */
+@media (max-width: 576px) {
+  .menu-title {
+    font-size: 13px;
+  }
+  
+  .menu-price {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  
+  .btn-tambah {
+    padding: 6px;
+    font-size: 12px;
+  }
+  
+  .category-name {
+    font-size: 20px;
+  }
+  
+  .category-description {
+    font-size: 13px;
+  }
+}
+/* End Responsive Tweaks */
