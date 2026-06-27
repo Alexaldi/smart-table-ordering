@@ -9,7 +9,7 @@ Route::get('/test-commit', [TestCommitController::class, 'index']);
 
 Route::get('/dashboard', function () {
     return view('dashboardAdmin');
-});
+})->name('dashboard');
 
 
 Route::resource('menu', MenuController::class)
