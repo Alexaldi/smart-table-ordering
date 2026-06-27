@@ -29,10 +29,4 @@ Route::resource('categories', CategoryController::class);
 
 Route::resource('tables', DiningTableController::class);
 
-// Customer Routes
-Route::get('/customer-menu', [CustomerMenuController::class, 'index'])
-    ->name('customer-menu.index');
-Route::get('/customer-menu/search', [CustomerMenuController::class, 'search'])
-    ->name('customer-menu.search');
-Route::get('/customer-menu/cart', [CustomerMenuController::class, 'cart'])
-    ->name('customer-menu.cart');
+require __DIR__ . '/members/gilang.php';
