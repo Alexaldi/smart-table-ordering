@@ -124,21 +124,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-/* Search */
-document.getElementById('searchTable').addEventListener('input', function () {
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('.table-card-item').forEach(card => {
-        card.style.display = card.dataset.name.includes(q) ? '' : 'none';
-    });
-});
-
 /* Fungsi Download QR Code sebagai Gambar PNG */
 function printQR(tableName, containerId) {
     const container = document.getElementById(containerId);
     const svg = container.querySelector('svg');
     
     if (!svg) {
-        alert('Gagal menemukan QR Code.');
+        alert('QR Code not found.');
         return;
     }
 
@@ -149,19 +141,36 @@ function printQR(tableName, containerId) {
     
     const image = new Image();
     image.onload = function () {
+        const padding = 40;
+        const qrSize = 400;
+        const textAreaHeight = 80;
+        const canvasWidth = qrSize + (padding * 2);
+        const canvasHeight = qrSize + (padding * 2) + textAreaHeight;
+
         const canvas = document.createElement('canvas');
-        canvas.width = 500;
-        canvas.height = 500;
-        const context = canvas.getContext('2d');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        const ctx = canvas.getContext('2d');
         
-        // Background putih solid
-        context.fillStyle = '#FFFFFF';
-        context.fillRect(0, 0, canvas.width, canvas.height);
+        // Background putih
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Render ke Canvas
-        context.drawImage(image, 0, 0, 500, 500);
+        // QR Code (dengan padding)
+        ctx.drawImage(image, padding, padding, qrSize, qrSize);
+
+        // Nama meja
+        ctx.fillStyle = '#111111';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(tableName, canvasWidth / 2, qrSize + padding + 35);
+
+        // Teks scan
+        ctx.fillStyle = '#555555';
+        ctx.font = '16px Arial';
+        ctx.fillText('Scan to order', canvasWidth / 2, qrSize + padding + 60);
         
-        // Download file
+        // Download
         const pngUrl = canvas.toDataURL('image/png');
         const downloadLink = document.createElement('a');
         const cleanName = tableName.replace(/\s+/g, '_');
