@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TestCommitController;
 use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\CategoryController;
 
 Route::get('/test-commit', [TestCommitController::class, 'index']);
 
@@ -21,3 +22,5 @@ Route::post('menu/import/preview', [MenuController::class, 'importPreview'])
     ->name('menu.import.preview');
 Route::post('menu/import/store', [MenuController::class, 'importStore'])
     ->name('menu.import.store');;
+
+Route::resource('categories', CategoryController::class);
