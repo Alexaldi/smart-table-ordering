@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TestCommitController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\DiningTableController;
 
 Route::get('/test-commit', [TestCommitController::class, 'index']);
 
@@ -24,3 +25,7 @@ Route::post('menu/import/store', [MenuController::class, 'importStore'])
     ->name('menu.import.store');;
 
 Route::resource('categories', CategoryController::class);
+
+Route::post('/tables', [DiningTableController::class, 'store'])->name('tables.store');
+Route::put('/tables/{id}', [DiningTableController::class, 'update'])->name('tables.update'); 
+Route::delete('/tables/{id}', [DiningTableController::class, 'destroy'])->name('tables.destroy'); 

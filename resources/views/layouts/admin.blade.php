@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" dir="ltr">
 	<head>
-
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 		<!-- META DATA -->
 		<meta charset="UTF-8">
 		<meta name='viewport' content='width=device-width, initial-scale=1.0, user-scalable=0'>

@@ -124,4 +124,56 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+/* Search */
+document.getElementById('searchTable').addEventListener('input', function () {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.table-card-item').forEach(card => {
+        card.style.display = card.dataset.name.includes(q) ? '' : 'none';
+    });
+});
+
+/* Fungsi Download QR Code sebagai Gambar PNG */
+function printQR(tableName, containerId) {
+    const container = document.getElementById(containerId);
+    const svg = container.querySelector('svg');
+    
+    if (!svg) {
+        alert('Gagal menemukan QR Code.');
+        return;
+    }
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const URL = window.URL || window.webkitURL || window;
+    const blobURL = URL.createObjectURL(svgBlob);
+    
+    const image = new Image();
+    image.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = 500;
+        canvas.height = 500;
+        const context = canvas.getContext('2d');
+        
+        // Background putih solid
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Render ke Canvas
+        context.drawImage(image, 0, 0, 500, 500);
+        
+        // Download file
+        const pngUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        const cleanName = tableName.replace(/\s+/g, '_');
+        
+        downloadLink.href = pngUrl;
+        downloadLink.download = `QR_${cleanName}.png`;
+        
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    };
+    
+    image.src = blobURL;
+}
 </script>
