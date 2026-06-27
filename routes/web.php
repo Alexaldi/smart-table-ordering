@@ -22,5 +22,9 @@ Route::post('menu/import/preview', [MenuController::class, 'importPreview'])
     ->name('menu.import.preview');
 Route::post('menu/import/store', [MenuController::class, 'importStore'])
     ->name('menu.import.store');;
+Route::post('menu/{menuItem}/discount', [MenuController::class, 'storeDiscount'])
+    ->name('menu.discount.store');
+Route::delete('menu/{menuItem}/discount/{discount}', [MenuController::class, 'destroyDiscount'])
+    ->name('menu.discount.destroy');
 
 Route::resource('categories', CategoryController::class);

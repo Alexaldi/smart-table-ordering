@@ -252,4 +252,55 @@ class MenuController extends Controller
 
         return (float) str_replace(['.', ','], ['', '.'], $price);
     }
+
+    public function storeDiscount(Request $request, MenuItem $menuItem)
+    {
+    $validated = $request->validateWithBag('discount', [
+        'discount_name' => ['required', 'string', 'max:100'],
+        'percentage'    => ['required', 'numeric', 'min:1', 'max:100'],
+        'start_date'    => ['required', 'date', 'after_or_equal:now'],
+        'end_date'      => ['required', 'date', 'after:start_date'],
+    ]);
+    
+    // dd($validated);
+
+    $alreadyHasDiscount = $menuItem->menuDiscounts()
+        ->whereHas('discount', fn($q) => $q
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+        )->exists();
+
+    if ($alreadyHasDiscount) {
+        return redirect()
+            ->route('menu.quick-edit', $menuItem)
+            ->withErrors(['Menu ini sudah memiliki diskon aktif.'], 'discount')
+            ->withInput();
+    }
+
+    $discount = \App\Models\Discount::create([
+        'name'       => $validated['discount_name'],
+        'percentage' => $validated['percentage'],
+        'start_date' => $validated['start_date'],
+        'end_date'   => $validated['end_date'],
+        'created_by' => \App\Models\User::where('username', 'admin')->first()->id,
+    ]);
+
+    $menuItem->menuDiscounts()->create([
+        'discount_id' => $discount->id,
+    ]);
+
+    return redirect()
+        ->route('menu.quick-edit', $menuItem)
+        ->with('success', 'Diskon berhasil ditambahkan.');
+    }
+
+    public function destroyDiscount(MenuItem $menuItem, \App\Models\Discount $discount)
+    {
+        $menuItem->menuDiscounts()->where('discount_id', $discount->id)->delete();
+        $discount->delete();
+
+        return redirect()
+            ->route('menu.quick-edit', $menuItem)
+            ->with('success', 'Diskon berhasil dihapus.');
+    }
 }

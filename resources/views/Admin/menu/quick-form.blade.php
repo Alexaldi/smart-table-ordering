@@ -125,7 +125,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-12">
+                            <div class="col-md-12 mt-4">
                                 <div class="form-check mb-4">
                                     <input
                                         type="checkbox"
@@ -155,12 +155,173 @@
                     </form>
                 </div>
 
+                {{-- DISCOUNT SECTION --}}
+                <div class="col-md-12 mb-5">
+                    <hr>
+                    <h6 class="mb-3">Discount</h6>
+
+                    @php
+                        // Hapus otomatis diskon yang sudah expired
+                        $menuItem->menuDiscounts()
+                            ->whereHas('discount', fn($q) => $q->where('end_date', '<', now()))
+                            ->each(function ($md) {
+                                $md->discount->delete();
+                                $md->delete();
+                            });
+
+                        $activeDiscount = $menuItem->menuDiscounts()
+                            ->with('discount')
+                            ->whereHas('discount', fn($q) => $q->where('end_date', '>=', now()))
+                            ->first();
+                    @endphp
+
+                    @if ($activeDiscount)
+                        <div class="d-flex align-items-center gap-3">
+                            <div>
+                                <span class="badge bg-warning text-dark fs-6">
+                                    {{ $activeDiscount->discount->percentage }}% OFF
+                                </span>
+                                <span class="ms-2 text-muted small">
+                                    {{ $activeDiscount->discount->name }}
+                                    &bull;
+                                    @if ($activeDiscount->discount->start_date->isFuture())
+                                        Mulai {{ $activeDiscount->discount->start_date->format('d M Y') }}
+                                        s/d {{ $activeDiscount->discount->end_date->format('d M Y') }}
+                                    @else
+                                        s/d {{ $activeDiscount->discount->end_date->format('d M Y') }}
+                                    @endif
+                                </span>
+                            </div>
+
+                            <form
+                                action="{{ route('menu.discount.destroy', [$menuItem, $activeDiscount->discount]) }}"
+                                method="POST"
+                                class="delete-form" data-type="Discount"
+                            >
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash-alt me-1"></i> Hapus Diskon
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <button
+                            type="button"
+                            class="btn btn-outline-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalTambahDiskon"
+                        >
+                            <i class="fe fe-percent me-1"></i> Tambah Diskon
+                        </button>
+                    @endif
+                </div>
+
+                {{-- MODAL TAMBAH DISKON --}}
+                <div class="modal fade" id="modalTambahDiskon" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Tambah Diskon — {{ $menuItem->name }}</h5>
+                                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"><i class="fa fa-close"></i></button>
+                            </div>
+
+                            <form action="{{ route('menu.discount.store', $menuItem) }}" method="POST">
+                                @csrf
+
+                                <div class="modal-body">
+                                    @if ($errors->hasBag('discount'))
+                                        <div class="alert alert-danger">
+                                            <ul class="mb-0">
+                                                @foreach ($errors->getBag('discount')->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Nama Diskon</label>
+                                        <input
+                                            type="text"
+                                            name="discount_name"
+                                            class="form-control"
+                                            placeholder="cth: Promo Weekend"
+                                            value="{{ old('discount_name') }}"
+                                            required
+                                        >
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Persentase (%)</label>
+                                        <div class="input-group">
+                                            <input
+                                                type="number"
+                                                name="percentage"
+                                                class="form-control"
+                                                placeholder="10"
+                                                min="1"
+                                                max="100"
+                                                step="0.01"
+                                                value="{{ old('percentage') }}"
+                                                required
+                                            >
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Mulai</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    name="start_date"
+                                                    class="form-control"
+                                                    value="{{ old('start_date') }}"
+                                                    id="start_date"
+                                                    required
+                                                >
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Selesai</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    name="end_date"
+                                                    class="form-control"
+                                                    value="{{ old('end_date') }}"
+                                                    required
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-primary">Simpan Diskon</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // Set min start_date ke waktu sekarang
+    document.getElementById('start_date').min = new Date().toISOString().slice(0, 16);
+
+    @if ($errors->hasBag('discount'))
+        document.addEventListener('DOMContentLoaded', function () {
+            var modal = new bootstrap.Modal(document.getElementById('modalTambahDiskon'));
+            modal.show();
+        });
+    @endif
     document.querySelectorAll('.price-format').forEach(function (input) {
         const hiddenInput = input.parentElement.querySelector('.price-value');
 
