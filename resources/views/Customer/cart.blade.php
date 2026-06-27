@@ -134,6 +134,37 @@
             margin-top: 6px;
         }
 
+        .item-price .original-price {
+            color: #999;
+            text-decoration: line-through;
+            font-weight: 500;
+            margin-right: 6px;
+        }
+
+        .item-price .discounted-price {
+            color: #222;
+            font-weight: 700;
+        }
+
+        .item-discount {
+            color: #ff4757;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .discount-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #fff0f1;
+            color: #ff4757;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
         .item-subtotal {
             color: #d4a574;
             font-size: 13px;
@@ -447,6 +478,11 @@
                             }
 
                             $quantity = (int) ($item['quantity'] ?? 1);
+                            $originalPrice = (float) ($item['original_price'] ?? $item['price'] ?? 0);
+                            $finalPrice = (float) ($item['price'] ?? $originalPrice);
+                            $discountPercentage = (float) ($item['discount_percentage'] ?? 0);
+                            $discountAmount = (float) ($item['discount_amount'] ?? 0);
+                            $hasDiscount = $discountPercentage > 0 && $discountAmount > 0;
                         @endphp
 
                         <article class="cart-item">
@@ -463,6 +499,9 @@
 
                             <div class="item-details">
                                 <h6 class="item-name">{{ $item['name'] }}</h6>
+                                @if ($hasDiscount)
+                                    <span class="discount-chip">{{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}% OFF</span>
+                                @endif
                                 <p class="item-note">
                                     @if (!empty($item['notes']))
                                         {{ $item['notes'] }}
@@ -470,7 +509,16 @@
                                         Tanpa catatan
                                     @endif
                                 </p>
-                                <div class="item-price">Harga satuan: Rp{{ number_format($item['price'], 0, ',', '.') }}</div>
+                                <div class="item-price">
+                                    Harga satuan:
+                                    @if ($hasDiscount)
+                                        <span class="original-price">Rp{{ number_format($originalPrice, 0, ',', '.') }}</span>
+                                        <span class="discounted-price">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                        <div class="item-discount">Hemat Rp{{ number_format($discountAmount * $quantity, 0, ',', '.') }}</div>
+                                    @else
+                                        Rp{{ number_format($finalPrice, 0, ',', '.') }}
+                                    @endif
+                                </div>
                                 <div class="item-subtotal">Subtotal: Rp{{ number_format($item['subtotal'], 0, ',', '.') }}</div>
                             </div>
 
@@ -531,8 +579,12 @@
 
                     <div class="cart-summary">
                         <div class="summary-row">
-                            <span>Subtotal (<span>{{ $cartCount }}</span> item)</span>
+                            <span>Subtotal sebelum diskon (<span>{{ $cartCount }}</span> item)</span>
                             <span class="summary-price">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Total Diskon</span>
+                            <span class="summary-price">-Rp{{ number_format($discountTotal ?? 0, 0, ',', '.') }}</span>
                         </div>
                         <div class="summary-row">
                             <span>Biaya Layanan</span>

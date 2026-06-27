@@ -176,10 +176,15 @@
                     @endphp
 
                     @if ($activeDiscount)
+                        @php
+                            $discountPercentage = (float) $activeDiscount->discount->percentage;
+                            $discountAmount = round(((float) $menuItem->price * $discountPercentage) / 100, 2);
+                            $finalPrice = max(0, (float) $menuItem->price - $discountAmount);
+                        @endphp
                         <div class="d-flex align-items-center gap-3">
                             <div>
                                 <span class="badge bg-warning text-dark fs-6">
-                                    {{ $activeDiscount->discount->percentage }}% OFF
+                                    {{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}% OFF
                                 </span>
                                 <span class="ms-2 text-muted small">
                                     {{ $activeDiscount->discount->name }}
@@ -191,6 +196,23 @@
                                         s/d {{ $activeDiscount->discount->end_date->format('d M Y') }}
                                     @endif
                                 </span>
+
+                                <div class="mt-3 p-3 border rounded bg-light">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <small class="text-muted d-block">Harga Normal</small>
+                                            <strong>Rp {{ number_format($menuItem->price, 0, ',', '.') }}</strong>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="text-muted d-block">Potongan</small>
+                                            <strong class="text-danger">-Rp {{ number_format($discountAmount, 0, ',', '.') }}</strong>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="text-muted d-block">Harga Setelah Diskon</small>
+                                            <strong class="text-success">Rp {{ number_format($finalPrice, 0, ',', '.') }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <form
@@ -259,6 +281,8 @@
                                                 type="number"
                                                 name="percentage"
                                                 class="form-control"
+                                                id="discountPercentageInput"
+                                                data-menu-price="{{ (float) $menuItem->price }}"
                                                 placeholder="10"
                                                 min="1"
                                                 max="100"
@@ -267,6 +291,23 @@
                                                 required
                                             >
                                             <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 p-3 border rounded bg-light" id="discountPreview">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <small class="text-muted d-block">Harga Normal</small>
+                                                <strong>Rp {{ number_format($menuItem->price, 0, ',', '.') }}</strong>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <small class="text-muted d-block">Potongan</small>
+                                                <strong class="text-danger" id="discountPreviewAmount">-Rp 0</strong>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <small class="text-muted d-block">Harga Setelah Diskon</small>
+                                                <strong class="text-success" id="discountPreviewFinal">Rp {{ number_format($menuItem->price, 0, ',', '.') }}</strong>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -322,6 +363,34 @@
             modal.show();
         });
     @endif
+
+    const discountPercentageInput = document.getElementById('discountPercentageInput');
+    const discountPreviewAmount = document.getElementById('discountPreviewAmount');
+    const discountPreviewFinal = document.getElementById('discountPreviewFinal');
+
+    function formatRupiah(value) {
+        return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.max(0, Math.round(value)));
+    }
+
+    function updateDiscountPreview() {
+        if (!discountPercentageInput || !discountPreviewAmount || !discountPreviewFinal) {
+            return;
+        }
+
+        const menuPrice = Number(discountPercentageInput.dataset.menuPrice || 0);
+        const percentage = Number(discountPercentageInput.value || 0);
+        const discountAmount = menuPrice * percentage / 100;
+        const finalPrice = menuPrice - discountAmount;
+
+        discountPreviewAmount.textContent = '-' + formatRupiah(discountAmount);
+        discountPreviewFinal.textContent = formatRupiah(finalPrice);
+    }
+
+    if (discountPercentageInput) {
+        discountPercentageInput.addEventListener('input', updateDiscountPreview);
+        updateDiscountPreview();
+    }
+
     document.querySelectorAll('.price-format').forEach(function (input) {
         const hiddenInput = input.parentElement.querySelector('.price-value');
 

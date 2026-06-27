@@ -66,24 +66,26 @@
                                         <small class="text-muted">{{ \Illuminate\Support\Str::limit($menuItem->description, 20) }}</small>
                                     </td>
                                     <td>{{ $menuItem->category->name ?? '-' }}</td>
-                                    <td class="position-relative">
-                                        Rp {{ number_format($menuItem->price, 0, ',', '.') }}
-
+                                    <td>
                                         @php
-                                            $discount = $menuItem->menuDiscounts()
-                                                ->whereHas('discount', fn($q) => $q->where('end_date', '>=', now()))
-                                                ->with('discount')
-                                                ->first();
+                                            $activeDiscount = $menuItem->activeDiscount();
                                         @endphp
 
-                                        @if ($discount)
-                                            <span
-                                                class="position-absolute bottom-0 end-0 text-warning me-1 mb-1"
-                                                data-bs-toggle="tooltip"
-                                                data-bs-placement="top"
-                                                title="Diskon {{ $discount->discount->percentage }}%">
-                                                <i class="fe fe-percent" style="font-size:12px;"></i>
+                                        @if ($activeDiscount)
+                                            <div class="text-muted small">
+                                                <del>Rp {{ number_format($menuItem->price, 0, ',', '.') }}</del>
+                                            </div>
+                                            <div class="fw-bold text-success">
+                                                Rp {{ number_format($menuItem->finalPrice(), 0, ',', '.') }}
+                                            </div>
+                                            <span class="badge bg-warning text-dark">
+                                                {{ rtrim(rtrim(number_format((float) $activeDiscount->percentage, 2, ',', '.'), '0'), ',') }}% OFF
                                             </span>
+                                            <div class="text-muted small">
+                                                Hemat Rp {{ number_format($menuItem->discountAmount(), 0, ',', '.') }}
+                                            </div>
+                                        @else
+                                            Rp {{ number_format($menuItem->price, 0, ',', '.') }}
                                         @endif
                                     </td>
                                     <td>

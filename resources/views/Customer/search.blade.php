@@ -166,6 +166,7 @@
             border-radius: 10px;
             overflow: hidden;
             background: #f5f5f5;
+            position: relative;
         }
 
         .menu-thumb img {
@@ -244,10 +245,29 @@
             gap: 2px;
         }
 
+        .original-price {
+            font-size: 12px;
+            color: #999;
+            text-decoration: line-through;
+        }
+
         .discounted-price {
             font-size: 15px;
             font-weight: 700;
             color: #222;
+        }
+
+        .discount-badge {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            background: #ff4757;
+            color: #fff;
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-weight: 700;
+            z-index: 2;
         }
 
         .stock {
@@ -430,10 +450,19 @@
                             } else {
                                 $imageSrc = null;
                             }
+
+                            $activeDiscount = $menuItem->activeDiscount();
+                            $hasDiscount = $activeDiscount !== null;
+                            $discountPercentage = $hasDiscount ? (float) $activeDiscount->percentage : 0;
+                            $finalPrice = $menuItem->finalPrice();
                         @endphp
 
                         <article class="menu-list-item">
                             <div class="menu-thumb">
+                                @if ($hasDiscount)
+                                    <span class="discount-badge">{{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}%</span>
+                                @endif
+
                                 @if ($imageSrc)
                                     <img src="{{ $imageSrc }}" alt="{{ $menuItem->name }}">
                                 @else
@@ -450,7 +479,12 @@
                                 <p class="menu-desc">{{ $menuItem->description ?: 'Menu favorit coffee shop kami.' }}</p>
                                 <div class="menu-price-row">
                                     <div class="price-wrapper">
-                                        <span class="discounted-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</span>
+                                        @if ($hasDiscount)
+                                            <span class="original-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</span>
+                                            <span class="discounted-price">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                        @else
+                                            <span class="discounted-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</span>
+                                        @endif
                                         <span class="stock">Stock {{ $menuItem->stock }}</span>
                                     </div>
 

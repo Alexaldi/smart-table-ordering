@@ -211,6 +211,98 @@
             min-height: 40vh;
         }
 
+        .discount-section {
+            background: #fff;
+            border-bottom: 1px solid #ececec;
+            padding: 24px 0 8px;
+        }
+
+        .discount-strip {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(245px, 285px);
+            gap: 14px;
+            overflow-x: auto;
+            padding: 2px 0 18px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .discount-strip::-webkit-scrollbar {
+            display: none;
+        }
+
+        .discount-card {
+            display: grid;
+            grid-template-columns: 86px 1fr;
+            gap: 12px;
+            align-items: stretch;
+            border: 1px solid #eadfd2;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #fffaf4, #fff);
+            padding: 10px;
+            box-shadow: 0 8px 20px rgba(80, 54, 30, 0.07);
+        }
+
+        .discount-thumb {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f6eee4;
+            min-height: 104px;
+        }
+
+        .discount-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .discount-info {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .discount-title {
+            color: #222;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .discount-meta {
+            color: #777;
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
+        .discount-price-row {
+            line-height: 1.25;
+            margin-bottom: 8px;
+        }
+
+        .discount-add {
+            margin-top: auto;
+            width: 100%;
+            border: 1px solid #d4a574;
+            border-radius: 8px;
+            background: #d4a574;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 7px 10px;
+            transition: all 0.2s;
+        }
+
+        .discount-add:hover {
+            background: #c49464;
+            border-color: #c49464;
+        }
+
         .category-header-section {
             display: flex;
             align-items: center;
@@ -323,6 +415,50 @@
             font-weight: 700;
             color: #111;
             margin-bottom: 5px;
+        }
+
+        .menu-price-wrapper {
+            margin-bottom: 5px;
+        }
+
+        .original-price {
+            display: inline-block;
+            color: #999;
+            font-size: 12px;
+            text-decoration: line-through;
+            margin-right: 6px;
+        }
+
+        .discounted-price {
+            display: inline-block;
+            color: #d4a574;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .discount-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #ff4757;
+            color: #fff;
+            padding: 4px 9px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            z-index: 2;
+        }
+
+        .modal-discount-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .modal-discount-row .badge {
+            background: #ff4757;
+            color: #fff;
         }
 
         .stock {
@@ -463,6 +599,10 @@
                 top: 34px;
             }
 
+            .discount-strip {
+                grid-auto-columns: minmax(232px, 82vw);
+            }
+
             .cat-btn {
                 padding: 14px 18px;
                 font-size: 13px;
@@ -555,6 +695,9 @@
     <div class="category-wrapper">
         <div class="container">
             <div class="category-list">
+                @if (($discountedMenuItems ?? collect())->count() > 0)
+                    <a href="#discount-menu" class="cat-btn">Menu Diskon</a>
+                @endif
                 <a href="#all-menu" class="cat-btn active">Semua Menu</a>
                 @foreach ($categories as $category)
                     @if ($category->menuItems->count() > 0)
@@ -564,6 +707,65 @@
             </div>
         </div>
     </div>
+
+    @if (($discountedMenuItems ?? collect())->count() > 0)
+        <section class="discount-section" id="discount-menu">
+            <div class="container">
+                <div class="category-header-section">
+                    <h3 class="category-name">Menu Sedang Diskon</h3>
+                    <div class="category-line"></div>
+                </div>
+
+                <div class="discount-strip">
+                    @foreach ($discountedMenuItems as $promoItem)
+                        @php
+                            $imageUrl = $promoItem->image_url;
+
+                            if ($imageUrl && \Illuminate\Support\Str::startsWith($imageUrl, ['http://', 'https://'])) {
+                                $imageSrc = $imageUrl;
+                            } elseif ($imageUrl && \Illuminate\Support\Str::startsWith($imageUrl, 'storage/')) {
+                                $imageSrc = asset($imageUrl);
+                            } elseif ($imageUrl) {
+                                $imageSrc = asset('storage/' . $imageUrl);
+                            } else {
+                                $imageSrc = null;
+                            }
+
+                            $activeDiscount = $promoItem->activeDiscount();
+                            $discountPercentage = (float) $activeDiscount->percentage;
+                            $discountAmount = $promoItem->discountAmount();
+                            $finalPrice = $promoItem->finalPrice();
+                        @endphp
+
+                        <article class="discount-card">
+                            <div class="discount-thumb">
+                                <span class="discount-badge">{{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}% OFF</span>
+                                @if ($imageSrc)
+                                    <img src="{{ $imageSrc }}" alt="{{ $promoItem->name }}">
+                                @else
+                                    <div class="placeholder-visual">
+                                        <i class="bi bi-cup-hot"></i>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="discount-info">
+                                <div class="discount-title">{{ $promoItem->name }}</div>
+                                <div class="discount-meta">Hemat Rp{{ number_format($discountAmount, 0, ',', '.') }} per item</div>
+                                <div class="discount-price-row">
+                                    <span class="original-price">Rp{{ number_format($promoItem->price, 0, ',', '.') }}</span><br>
+                                    <span class="discounted-price">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                </div>
+                                <button class="discount-add" type="button" data-bs-toggle="modal" data-bs-target="#menuModal-{{ $promoItem->id }}">
+                                    <i class="bi bi-plus-lg"></i> Tambah
+                                </button>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
 
     <main class="menu-section" id="all-menu">
         <div class="container py-4">
@@ -597,11 +799,21 @@
                                     } else {
                                         $imageSrc = null;
                                     }
+
+                                    $activeDiscount = $menuItem->activeDiscount();
+                                    $hasDiscount = $activeDiscount !== null;
+                                    $discountPercentage = $hasDiscount ? (float) $activeDiscount->percentage : 0;
+                                    $discountAmount = $menuItem->discountAmount();
+                                    $finalPrice = $menuItem->finalPrice();
                                 @endphp
 
                                 <div class="col-6 col-md-4 col-lg-3">
                                     <article class="menu-card">
                                         <div class="menu-img">
+                                            @if ($hasDiscount)
+                                                <span class="discount-badge">{{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}% OFF</span>
+                                            @endif
+
                                             @if ($imageSrc)
                                                 <img src="{{ $imageSrc }}" alt="{{ $menuItem->name }}">
                                             @else
@@ -615,7 +827,14 @@
                                         <div class="menu-body">
                                             <h6 class="menu-title">{{ $menuItem->name }}</h6>
                                             <p class="menu-desc">{{ $menuItem->description ?: 'Menu favorit coffee shop kami.' }}</p>
-                                            <p class="menu-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</p>
+                                            @if ($hasDiscount)
+                                                <div class="menu-price-wrapper">
+                                                    <span class="original-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</span>
+                                                    <span class="discounted-price">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                                </div>
+                                            @else
+                                                <p class="menu-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</p>
+                                            @endif
                                             <div class="stock">Stock {{ $menuItem->stock }}</div>
                                             <button class="btn-tambah" type="button" data-bs-toggle="modal" data-bs-target="#menuModal-{{ $menuItem->id }}">
                                                 <i class="bi bi-plus-lg"></i> Tambah
@@ -651,7 +870,16 @@
                                                     <div class="p-4">
                                                         <h5 class="fw-bold mb-1">{{ $menuItem->name }}</h5>
                                                         <p class="text-muted small mb-1">{{ $category->name }}</p>
-                                                        <p class="fw-bold mb-2" style="color: #d4a574;">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</p>
+                                                        @if ($hasDiscount)
+                                                            <div class="modal-discount-row mb-1">
+                                                                <span class="original-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</span>
+                                                                <span class="fw-bold" style="color: #d4a574;">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                                                <span class="badge">{{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}% OFF</span>
+                                                            </div>
+                                                            <p class="text-muted small mb-2">Hemat Rp{{ number_format($discountAmount, 0, ',', '.') }} per item</p>
+                                                        @else
+                                                            <p class="fw-bold mb-2" style="color: #d4a574;">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</p>
+                                                        @endif
                                                         <p class="text-muted small mb-3">{{ $menuItem->description ?: 'Menu favorit coffee shop kami.' }}</p>
 
                                                         <div class="mb-3">

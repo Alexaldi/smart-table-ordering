@@ -14,7 +14,7 @@ class MenuController extends Controller
 {
     public function index()
     {
-        $menuItems = MenuItem::with('category')
+        $menuItems = MenuItem::with(['category', 'menuDiscounts.discount'])
             ->latest()
             ->paginate(10);
 
@@ -106,6 +106,8 @@ class MenuController extends Controller
     // Quick Edit Methods
     public function editQuick(MenuItem $menuItem)
     {
+        $menuItem->load(['category', 'menuDiscounts.discount']);
+
         return view('Admin.menu.quick-form', compact('menuItem'));
     }
 

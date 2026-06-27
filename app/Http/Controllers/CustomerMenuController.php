@@ -32,6 +32,39 @@ class CustomerMenuController extends Controller
         return 'customer_cart_table_' . $table->id;
     }
 
+    private function menuPricing(MenuItem $menuItem): array
+    {
+        $discount = $menuItem->activeDiscount();
+        $originalPrice = (float) $menuItem->price;
+        $discountPercentage = $discount ? (float) $discount->percentage : 0;
+        $discountAmount = $discount ? round(($originalPrice * $discountPercentage) / 100, 2) : 0;
+        $finalPrice = max(0, round($originalPrice - $discountAmount, 2));
+
+        return [
+            'discount_id' => $discount?->id,
+            'discount_name' => $discount?->name,
+            'discount_percentage' => $discountPercentage,
+            'discount_amount' => $discountAmount,
+            'original_price' => $originalPrice,
+            'final_price' => $finalPrice,
+        ];
+    }
+
+    private function cartSubtotalBeforeDiscount(array $item): float
+    {
+        return (float) ($item['subtotal_before_discount'] ?? (($item['original_price'] ?? $item['price'] ?? 0) * ($item['quantity'] ?? 0)));
+    }
+
+    private function cartDiscountTotal(array $item): float
+    {
+        return (float) ($item['discount_total'] ?? (($item['discount_amount'] ?? 0) * ($item['quantity'] ?? 0)));
+    }
+
+    private function cartFinalSubtotal(array $item): float
+    {
+        return (float) ($item['subtotal'] ?? (($item['price'] ?? 0) * ($item['quantity'] ?? 0)));
+    }
+
     /**
      * Halaman utama customer menu.
      * Menampilkan kategori dan menu yang aktif, tersedia, dan stock > 0.
@@ -44,6 +77,7 @@ class CustomerMenuController extends Controller
             $query->where('is_active', true)
                 ->where('is_available', true)
                 ->where('stock', '>', 0)
+                ->with('menuDiscounts.discount')
                 ->orderBy('name');
         }])
             ->orderBy('name')
@@ -51,12 +85,18 @@ class CustomerMenuController extends Controller
 
         $cart = session()->get($this->cartKey($table), []);
         $cartCount = collect($cart)->sum('quantity');
+        $discountedMenuItems = $categories
+            ->flatMap(fn ($category) => $category->menuItems)
+            ->filter(fn (MenuItem $menuItem) => $menuItem->hasActiveDiscount())
+            ->sortByDesc(fn (MenuItem $menuItem) => $menuItem->discountPercentage())
+            ->values();
 
         return view('customer.menu', compact(
             'table',
             'categories',
             'token',
-            'cartCount'
+            'cartCount',
+            'discountedMenuItems'
         ));
     }
 
@@ -69,7 +109,7 @@ class CustomerMenuController extends Controller
         $table = $this->getTableByToken($token);
         $keyword = $request->query('q');
 
-        $menuItems = MenuItem::with('category')
+        $menuItems = MenuItem::with(['category', 'menuDiscounts.discount'])
             ->where('is_active', true)
             ->where('is_available', true)
             ->where('stock', '>', 0)
@@ -104,14 +144,16 @@ class CustomerMenuController extends Controller
 
         $cart = session()->get($this->cartKey($table), []);
 
-        $subtotal = collect($cart)->sum('subtotal');
-        $grandTotal = $subtotal;
+        $subtotal = collect($cart)->sum(fn ($item) => $this->cartSubtotalBeforeDiscount($item));
+        $discountTotal = collect($cart)->sum(fn ($item) => $this->cartDiscountTotal($item));
+        $grandTotal = collect($cart)->sum(fn ($item) => $this->cartFinalSubtotal($item));
         $cartCount = collect($cart)->sum('quantity');
 
         return view('customer.cart', compact(
             'table',
             'cart',
             'subtotal',
+            'discountTotal',
             'grandTotal',
             'token',
             'cartCount'
@@ -132,7 +174,8 @@ class CustomerMenuController extends Controller
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $menuItem = MenuItem::where('id', $validated['menu_item_id'])
+        $menuItem = MenuItem::with('menuDiscounts.discount')
+            ->where('id', $validated['menu_item_id'])
             ->where('is_active', true)
             ->where('is_available', true)
             ->where('stock', '>', 0)
@@ -146,6 +189,7 @@ class CustomerMenuController extends Controller
         $cart = session()->get($cartKey, []);
 
         $menuItemId = $menuItem->id;
+        $pricing = $this->menuPricing($menuItem);
 
         if (isset($cart[$menuItemId])) {
             $newQuantity = $cart[$menuItemId]['quantity'] + $validated['quantity'];
@@ -155,18 +199,35 @@ class CustomerMenuController extends Controller
             }
 
             $cart[$menuItemId]['quantity'] = $newQuantity;
-            $cart[$menuItemId]['notes'] = $validated['notes'] ?? $cart[$menuItemId]['notes'];
-            $cart[$menuItemId]['subtotal'] = $cart[$menuItemId]['price'] * $newQuantity;
+            $cart[$menuItemId]['notes'] = filled($validated['notes'] ?? null)
+                ? $validated['notes']
+                : ($cart[$menuItemId]['notes'] ?? null);
+            $cart[$menuItemId]['price'] = $pricing['final_price'];
+            $cart[$menuItemId]['original_price'] = $pricing['original_price'];
+            $cart[$menuItemId]['discount_id'] = $pricing['discount_id'];
+            $cart[$menuItemId]['discount_name'] = $pricing['discount_name'];
+            $cart[$menuItemId]['discount_percentage'] = $pricing['discount_percentage'];
+            $cart[$menuItemId]['discount_amount'] = $pricing['discount_amount'];
+            $cart[$menuItemId]['subtotal_before_discount'] = $pricing['original_price'] * $newQuantity;
+            $cart[$menuItemId]['discount_total'] = $pricing['discount_amount'] * $newQuantity;
+            $cart[$menuItemId]['subtotal'] = $pricing['final_price'] * $newQuantity;
         } else {
             $cart[$menuItemId] = [
                 'menu_item_id' => $menuItem->id,
                 'name' => $menuItem->name,
                 'description' => $menuItem->description,
-                'price' => (float) $menuItem->price,
+                'price' => $pricing['final_price'],
+                'original_price' => $pricing['original_price'],
                 'quantity' => $validated['quantity'],
                 'notes' => $validated['notes'] ?? null,
                 'image_url' => $menuItem->image_url,
-                'subtotal' => (float) $menuItem->price * $validated['quantity'],
+                'discount_id' => $pricing['discount_id'],
+                'discount_name' => $pricing['discount_name'],
+                'discount_percentage' => $pricing['discount_percentage'],
+                'discount_amount' => $pricing['discount_amount'],
+                'subtotal_before_discount' => $pricing['original_price'] * $validated['quantity'],
+                'discount_total' => $pricing['discount_amount'] * $validated['quantity'],
+                'subtotal' => $pricing['final_price'] * $validated['quantity'],
             ];
         }
 
@@ -198,14 +259,25 @@ class CustomerMenuController extends Controller
             return back()->with('error', 'Menu tidak ada di cart.');
         }
 
-        $menuItem = MenuItem::findOrFail($menuItemId);
+        $menuItem = MenuItem::with('menuDiscounts.discount')->findOrFail($menuItemId);
 
         if ($validated['quantity'] > $menuItem->stock) {
             return back()->with('error', 'Jumlah melebihi stock yang tersedia.');
         }
 
-        $cart[$menuItemId]['quantity'] = $validated['quantity'];
-        $cart[$menuItemId]['subtotal'] = $cart[$menuItemId]['price'] * $validated['quantity'];
+        $pricing = $this->menuPricing($menuItem);
+        $quantity = $validated['quantity'];
+
+        $cart[$menuItemId]['quantity'] = $quantity;
+        $cart[$menuItemId]['price'] = $pricing['final_price'];
+        $cart[$menuItemId]['original_price'] = $pricing['original_price'];
+        $cart[$menuItemId]['discount_id'] = $pricing['discount_id'];
+        $cart[$menuItemId]['discount_name'] = $pricing['discount_name'];
+        $cart[$menuItemId]['discount_percentage'] = $pricing['discount_percentage'];
+        $cart[$menuItemId]['discount_amount'] = $pricing['discount_amount'];
+        $cart[$menuItemId]['subtotal_before_discount'] = $pricing['original_price'] * $quantity;
+        $cart[$menuItemId]['discount_total'] = $pricing['discount_amount'] * $quantity;
+        $cart[$menuItemId]['subtotal'] = $pricing['final_price'] * $quantity;
 
         session()->put($cartKey, $cart);
 
@@ -253,7 +325,39 @@ class CustomerMenuController extends Controller
 
         try {
             DB::transaction(function () use ($cart, $table, $validated, $cartKey) {
-                $subtotal = collect($cart)->sum('subtotal');
+                $preparedItems = [];
+                $subtotal = 0;
+                $discountTotal = 0;
+                $grandTotal = 0;
+
+                foreach ($cart as $item) {
+                    $menuItem = MenuItem::with('menuDiscounts.discount')->lockForUpdate()->findOrFail($item['menu_item_id']);
+                    $quantity = $item['quantity'];
+
+                    if ($quantity > $menuItem->stock) {
+                        throw ValidationException::withMessages([
+                            'cart' => 'Stock ' . $menuItem->name . ' tidak cukup.',
+                        ]);
+                    }
+
+                    $pricing = $this->menuPricing($menuItem);
+                    $subtotalBeforeDiscount = $pricing['original_price'] * $quantity;
+                    $itemDiscountTotal = $pricing['discount_amount'] * $quantity;
+                    $itemFinalSubtotal = $pricing['final_price'] * $quantity;
+
+                    $subtotal += $subtotalBeforeDiscount;
+                    $discountTotal += $itemDiscountTotal;
+                    $grandTotal += $itemFinalSubtotal;
+
+                    $preparedItems[] = [
+                        'menu_item' => $menuItem,
+                        'quantity' => $quantity,
+                        'notes' => $item['notes'] ?? null,
+                        'pricing' => $pricing,
+                        'discount_total' => $itemDiscountTotal,
+                        'subtotal' => $itemFinalSubtotal,
+                    ];
+                }
 
                 $order = Order::create([
                     'order_code' => 'ORD-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4)),
@@ -263,27 +367,22 @@ class CustomerMenuController extends Controller
                     'payment_method' => null,
                     'payment_status' => 'unpaid',
                     'subtotal' => $subtotal,
-                    'discount_total' => 0,
-                    'grand_total' => $subtotal,
+                    'discount_total' => $discountTotal,
+                    'grand_total' => $grandTotal,
                     'notes' => $validated['notes'] ?? null,
                 ]);
 
-                foreach ($cart as $item) {
-                    $menuItem = MenuItem::lockForUpdate()->findOrFail($item['menu_item_id']);
-
-                    if ($item['quantity'] > $menuItem->stock) {
-                        throw ValidationException::withMessages([
-                            'cart' => 'Stock ' . $menuItem->name . ' tidak cukup.',
-                        ]);
-                    }
+                foreach ($preparedItems as $item) {
+                    $menuItem = $item['menu_item'];
+                    $pricing = $item['pricing'];
 
                     OrderItem::create([
                         'order_id' => $order->id,
                         'menu_item_id' => $menuItem->id,
-                        'discount_id' => null,
+                        'discount_id' => $pricing['discount_id'],
                         'quantity' => $item['quantity'],
-                        'unit_price' => $item['price'],
-                        'discount_amount' => 0,
+                        'unit_price' => $pricing['original_price'],
+                        'discount_amount' => $item['discount_total'],
                         'subtotal' => $item['subtotal'],
                         'notes' => $item['notes'] ?? null,
                         'status' => 'pending',
