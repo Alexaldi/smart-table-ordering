@@ -43,4 +43,9 @@ class MenuItem extends Model
     {
         return $this->belongsToMany(Discount::class, 'menu_discounts');
     }
+
+    public function menuDiscounts(): HasMany
+    {
+        return $this->hasMany(MenuDiscount::class, 'menu_item_id');
+    }
 }

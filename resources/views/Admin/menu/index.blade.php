@@ -66,11 +66,41 @@
                                         <small class="text-muted">{{ \Illuminate\Support\Str::limit($menuItem->description, 20) }}</small>
                                     </td>
                                     <td>{{ $menuItem->category->name ?? '-' }}</td>
-                                    <td>Rp {{ number_format($menuItem->price, 0, ',', '.') }}</td>
+                                    <td class="position-relative">
+                                        Rp {{ number_format($menuItem->price, 0, ',', '.') }}
+
+                                        @php
+                                            $discount = $menuItem->menuDiscounts()
+                                                ->whereHas('discount', fn($q) => $q->where('end_date', '>=', now()))
+                                                ->with('discount')
+                                                ->first();
+                                        @endphp
+
+                                        @if ($discount)
+                                            <span
+                                                class="position-absolute bottom-0 end-0 text-warning me-1 mb-1"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                title="Diskon {{ $discount->discount->percentage }}%">
+                                                <i class="fe fe-percent" style="font-size:12px;"></i>
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td>
                                         {{ $menuItem->estimated_minutes ? $menuItem->estimated_minutes . ' minutes' : '-' }}
                                     </td>
-                                    <td>{{ $menuItem->stock }}</td>
+                                    <td class="position-relative">
+                                        {{ $menuItem->stock }}
+                                        @if($menuItem->stock <= 3)
+                                            <span
+                                                class="position-absolute bottom-0 end-0 text-danger me-1 mb-1"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                title="Stok Menipis!">
+                                                <i class="fe fe-alert-triangle" style="font-size: 12px;"></i>
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td class="text-center">
                                         @if ($menuItem->is_available)
                                             <span class="badge bg-success">Available</span>
