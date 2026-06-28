@@ -38,6 +38,14 @@
 <link id="theme" rel="stylesheet" type="text/css" media="all" href="{{ asset('assets/colors/color1.css') }}" />
 
 <style>
+.tm-admin-page-shell,
+.tm-admin-page-shell .row,
+.tm-admin-page-shell [class*="col-"],
+.tm-admin-page-shell .card,
+.tm-admin-page-shell .card-body {
+    min-width: 0;
+    max-width: 100%;
+}
 .tm-page { padding: 2rem 1.5rem; max-width: 100%; overflow-x: hidden; }
 
 /* Topbar */
@@ -118,6 +126,12 @@
 }
 
 @media (max-width: 575.98px) {
+    .tm-admin-page-shell { padding-left: 8px !important; padding-right: 8px !important; }
+    .tm-admin-page-shell > .row { margin-left: 0; margin-right: 0; }
+    .tm-admin-page-shell > .row > [class*="col-"] { padding-left: 0; padding-right: 0; }
+    .tm-admin-page-shell .card { margin-top: 1rem !important; }
+    .tm-admin-page-shell .card-header { padding-left: 1rem; padding-right: 1rem; }
+    .tm-admin-page-shell .card-body { padding: 1rem; overflow: hidden; }
     .tm-page { padding: .75rem 0; }
     .tm-stats-row { grid-template-columns: 1fr; gap: 10px; margin-bottom: 1rem; }
     .tm-stat-card { padding: .85rem 1rem; }
@@ -126,8 +140,8 @@
     .tm-right-header { align-items: flex-start; }
     .tm-cards-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
     .tm-table-card { padding: 1rem; border-radius: 10px; }
-    .tm-card-header { gap: 8px; }
-    .tm-status-dot { flex-shrink: 0; }
+    .tm-card-header { gap: 8px; flex-wrap: wrap; }
+    .tm-status-dot { flex-shrink: 0; margin-left: auto; white-space: nowrap; }
     .tm-card-footer { justify-content: stretch; }
     .tm-action-btn { flex: 1 1 0; justify-content: center; min-height: 34px; }
 }

@@ -203,14 +203,24 @@
             position: sticky;
             top: 36px;
             z-index: 100;
+            touch-action: pan-x pan-y;
         }
 
         .category-list {
             display: flex;
             gap: 0;
             overflow-x: auto;
+            min-height: 64px;
             -ms-overflow-style: none;
             scrollbar-width: none;
+            cursor: grab;
+            user-select: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .category-list.is-dragging {
+            cursor: grabbing;
+            scroll-behavior: auto;
         }
 
         .category-list::-webkit-scrollbar {
@@ -228,7 +238,9 @@
             color: #666;
             transition: all 0.2s ease;
             text-decoration: none;
-            display: inline-block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .cat-btn:hover,
@@ -304,6 +316,7 @@
             border-radius: 12px;
             background: #fff;
             overflow: hidden;
+            cursor: pointer;
             box-shadow: 0 8px 20px rgba(80, 54, 30, 0.07);
             display: flex;
             flex-direction: column;
@@ -314,6 +327,12 @@
             border-color: #dfc3a3;
             transform: translateY(-2px);
             box-shadow: 0 12px 28px rgba(80, 54, 30, 0.1);
+        }
+
+        .discount-card:focus-visible,
+        .menu-card:focus-visible {
+            outline: 3px solid rgba(212, 165, 116, 0.35);
+            outline-offset: 3px;
         }
 
         .discount-thumb {
@@ -460,6 +479,7 @@
             height: 100%;
             display: flex;
             flex-direction: column;
+            cursor: pointer;
             transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
         }
 
@@ -1027,7 +1047,7 @@
                                 $finalPrice = $promoItem->finalPrice();
                             @endphp
 
-                            <article class="discount-card">
+                            <article class="discount-card" role="button" tabindex="0" data-menu-card-trigger data-bs-toggle="modal" data-bs-target="#menuModal-{{ $promoItem->id }}" aria-label="Lihat detail {{ $promoItem->name }}">
                                 <div class="discount-thumb">
                                     <span class="discount-badge">{{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}% OFF</span>
                                     @if ($imageSrc)
@@ -1047,7 +1067,7 @@
                                         <span class="discounted-price">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
                                     </div>
                                     <button class="discount-add" type="button" data-bs-toggle="modal" data-bs-target="#menuModal-{{ $promoItem->id }}">
-                                        <i class="bi bi-plus-lg"></i> Tambah
+                                        <i class="bi bi-eye"></i> Detail
                                     </button>
                                 </div>
                             </article>
@@ -1103,7 +1123,7 @@
                                 @endphp
 
                                 <div class="col-6 col-md-4 col-lg-3">
-                                    <article class="menu-card">
+                                    <article class="menu-card" role="button" tabindex="0" data-menu-card-trigger data-bs-toggle="modal" data-bs-target="#menuModal-{{ $menuItem->id }}" aria-label="Lihat detail {{ $menuItem->name }}">
                                         <div class="menu-img">
                                             @if ($hasDiscount)
                                                 <span class="discount-badge">{{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}% OFF</span>
@@ -1131,7 +1151,7 @@
                                                 <p class="menu-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</p>
                                             @endif
                                             <button class="btn-tambah" type="button" data-bs-toggle="modal" data-bs-target="#menuModal-{{ $menuItem->id }}">
-                                                <i class="bi bi-plus-lg"></i> Tambah
+                                                <i class="bi bi-eye"></i> Detail
                                             </button>
                                         </div>
                                     </article>
@@ -1298,6 +1318,22 @@
             });
         });
 
+        document.querySelectorAll('[data-menu-card-trigger]').forEach((card) => {
+            card.addEventListener('keydown', (event) => {
+                if (!['Enter', ' '].includes(event.key)) {
+                    return;
+                }
+
+                event.preventDefault();
+                const modalSelector = card.dataset.bsTarget;
+                const modalElement = modalSelector ? document.querySelector(modalSelector) : null;
+
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        });
+
         document.querySelectorAll('[data-toast-close]').forEach((button) => {
             button.addEventListener('click', () => {
                 button.closest('.customer-toast')?.remove();
@@ -1323,7 +1359,64 @@
         }
 
         const categoryButtons = document.querySelectorAll('.cat-btn');
+        const categoryList = document.querySelector('.category-list');
+        let categoryDragStarted = false;
         let manualScrollLock = false;
+
+        if (categoryList) {
+            let isCategoryDragging = false;
+            let dragStartX = 0;
+            let dragStartScrollLeft = 0;
+            let dragDistance = 0;
+
+            categoryList.addEventListener('pointerdown', (event) => {
+                if (event.pointerType === 'mouse' || (event.button !== undefined && event.button !== 0)) {
+                    return;
+                }
+
+                isCategoryDragging = true;
+                categoryDragStarted = false;
+                dragStartX = event.clientX;
+                dragDistance = 0;
+                dragStartScrollLeft = categoryList.scrollLeft;
+                categoryList.classList.add('is-dragging');
+                categoryList.setPointerCapture?.(event.pointerId);
+            });
+
+            categoryList.addEventListener('pointermove', (event) => {
+                if (!isCategoryDragging) {
+                    return;
+                }
+
+                dragDistance = event.clientX - dragStartX;
+
+                if (Math.abs(dragDistance) > 4) {
+                    categoryDragStarted = true;
+                    categoryList.scrollLeft = dragStartScrollLeft - dragDistance;
+                    event.preventDefault();
+                }
+            });
+
+            function stopCategoryDrag(event) {
+                if (!isCategoryDragging) {
+                    return;
+                }
+
+                isCategoryDragging = false;
+                categoryList.classList.remove('is-dragging');
+                categoryList.releasePointerCapture?.(event.pointerId);
+
+                if (categoryDragStarted) {
+                    window.setTimeout(() => {
+                        categoryDragStarted = false;
+                    }, 0);
+                }
+            }
+
+            categoryList.addEventListener('pointerup', stopCategoryDrag);
+            categoryList.addEventListener('pointercancel', stopCategoryDrag);
+            categoryList.addEventListener('pointerleave', stopCategoryDrag);
+        }
 
         function setActiveCategory(targetId) {
             categoryButtons.forEach((item) => {
@@ -1349,6 +1442,11 @@
 
         categoryButtons.forEach((button) => {
             button.addEventListener('click', (event) => {
+                if (categoryDragStarted) {
+                    event.preventDefault();
+                    return;
+                }
+
                 const targetId = button.getAttribute('href');
                 const target = targetId ? document.querySelector(targetId) : null;
 

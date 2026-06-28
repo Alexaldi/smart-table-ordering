@@ -2,7 +2,7 @@
 @section('title', 'QR Table Management')
 @section('content')
 
-    <div class="side-app">
+    <div class="side-app tm-admin-page-shell">
         <div class="row">
             <div class="col-12 col-sm-12">
                 <div class="card mt-5">
@@ -103,7 +103,7 @@
 
                                                 <div class="tm-qr-area">
                                                     <div id="qr-container-{{ $table->id }}">
-                                                        {!! QrCode::size(130)->margin(0)->generate(route('customer-menu.index', ['token' => $table->qr_token])) !!}
+                                                        {!! QrCode::size(130)->margin(0)->generate(rtrim(config('app.url'), '/') . route('customer-menu.index', ['token' => $table->qr_token], false)) !!}
                                                     </div>
                                                 </div>
 

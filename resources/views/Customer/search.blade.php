@@ -254,11 +254,18 @@
             padding: 20px 0;
             border-bottom: 1px solid #f0f0f0;
             align-items: flex-start;
+            cursor: pointer;
             transition: background 0.2s;
         }
 
         .menu-list-item.is-hidden {
             display: none;
+        }
+
+        .menu-list-item:focus-visible {
+            outline: 3px solid rgba(212, 165, 116, 0.35);
+            outline-offset: 3px;
+            border-radius: 12px;
         }
 
         .menu-list-item:hover {
@@ -397,6 +404,95 @@
             color: #fff;
         }
 
+        .modal-content {
+            border-radius: 5px 5px 12px 12px;
+            overflow: hidden;
+        }
+
+        .modal-image-wrapper {
+            width: 100%;
+            height: 240px;
+            line-height: 0;
+            background: #f6eee4;
+        }
+
+        .modal-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        .btn-close-modal {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s;
+        }
+
+        .btn-close-modal:hover {
+            background: #fff;
+            transform: scale(1.1);
+        }
+
+        .btn-close-modal i {
+            font-size: 14px;
+            color: #222;
+        }
+
+        .qty-btn {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .title-button {
+            font-size: 14px;
+            background: #222;
+            border-color: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .title-button:hover {
+            background: #d4a574;
+            border-color: #d4a574;
+        }
+
+        .modal-total-price {
+            color: #d4a574;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .modal-discount-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .modal-discount-row .badge {
+            background: #ff4757;
+            color: #fff;
+        }
+
         .empty-state {
             border-top: 1px solid #f0f0f0;
             padding: 56px 18px;
@@ -523,6 +619,10 @@
                 padding: 6px 16px;
                 font-size: 12px;
             }
+
+            .modal-image-wrapper {
+                height: 210px;
+            }
         }
 
         @media (min-width: 768px) {
@@ -626,11 +726,18 @@
                             $activeDiscount = $menuItem->activeDiscount();
                             $hasDiscount = $activeDiscount !== null;
                             $discountPercentage = $hasDiscount ? (float) $activeDiscount->percentage : 0;
+                            $discountAmount = $menuItem->discountAmount();
                             $finalPrice = $menuItem->finalPrice();
                         @endphp
 
                         <article
                             class="menu-list-item"
+                            role="button"
+                            tabindex="0"
+                            data-menu-card-trigger
+                            data-bs-toggle="modal"
+                            data-bs-target="#menuModal-{{ $menuItem->id }}"
+                            aria-label="Lihat detail {{ $menuItem->name }}"
                             data-menu-item
                             data-name="{{ \Illuminate\Support\Str::lower($menuItem->name) }}"
                             data-category="{{ \Illuminate\Support\Str::lower($menuItem->category->name ?? 'menu') }}"
@@ -668,16 +775,87 @@
                                         @endif
                                     </div>
 
-                                    <form action="{{ route('customer-menu.cart.add', ['token' => $token]) }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="menu_item_id" value="{{ $menuItem->id }}">
-                                        <input type="hidden" name="quantity" value="1">
-                                        <input type="hidden" name="notes" value="">
-                                        <button type="submit" class="btn-add">Add</button>
-                                    </form>
+                                    <button type="button" class="btn-add" data-bs-toggle="modal" data-bs-target="#menuModal-{{ $menuItem->id }}">
+                                        Detail
+                                    </button>
                                 </div>
                             </div>
                         </article>
+
+                        <div class="modal fade" id="menuModal-{{ $menuItem->id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0">
+                                    <form action="{{ route('customer-menu.cart.add', ['token' => $token]) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="menu_item_id" value="{{ $menuItem->id }}">
+                                        <input type="hidden" name="quantity" id="quantityInput-{{ $menuItem->id }}" value="1" data-unit-price="{{ $finalPrice }}">
+
+                                        <div class="modal-body p-0">
+                                            <div class="modal-image-wrapper position-relative">
+                                                @if ($imageSrc)
+                                                    <img src="{{ $imageSrc }}" class="img-fluid w-100" alt="{{ $menuItem->name }}">
+                                                @else
+                                                    <div class="placeholder-visual">
+                                                        <i class="bi bi-cup-hot"></i>
+                                                        <span>{{ $menuItem->name }}</span>
+                                                    </div>
+                                                @endif
+
+                                                <button type="button" class="btn-close-modal" data-bs-dismiss="modal" aria-label="Tutup">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+
+                                            <div class="p-4">
+                                                <h5 class="fw-bold mb-1">{{ $menuItem->name }}</h5>
+                                                <p class="text-muted small mb-1">{{ $menuItem->category->name ?? 'Menu' }}</p>
+                                                @if ($hasDiscount)
+                                                    <div class="modal-discount-row mb-1">
+                                                        <span class="original-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</span>
+                                                        <span class="fw-bold" style="color: #d4a574;">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                                        <span class="badge">{{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}% OFF</span>
+                                                    </div>
+                                                    <p class="text-muted small mb-2">Hemat Rp{{ number_format($discountAmount, 0, ',', '.') }} per item</p>
+                                                @else
+                                                    <p class="fw-bold mb-2" style="color: #d4a574;">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</p>
+                                                @endif
+                                                <p class="text-muted small mb-3">{{ $menuItem->description ?: 'Menu favorit coffee shop kami.' }}</p>
+
+                                                <div class="mb-3">
+                                                    <label for="notes-{{ $menuItem->id }}" class="form-label small fw-bold text-uppercase">Catatan</label>
+                                                    <textarea id="notes-{{ $menuItem->id }}" name="notes" class="form-control" rows="2" placeholder="Opsional, contoh: less sugar"></textarea>
+                                                </div>
+
+                                                <hr>
+
+                                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                                    <div>
+                                                        <label class="fw-bold mb-0">Total Order</label>
+                                                        <div class="modal-total-price" id="modalTotal-{{ $menuItem->id }}">Rp{{ number_format($finalPrice, 0, ',', '.') }}</div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <button class="btn btn-outline-secondary btn-sm qty-btn" type="button" data-qty-action="minus" data-target-id="{{ $menuItem->id }}" aria-label="Kurangi">
+                                                            <i class="bi bi-dash"></i>
+                                                        </button>
+                                                        <span class="fw-bold" id="qtyValue-{{ $menuItem->id }}">1</span>
+                                                        <button class="btn btn-outline-secondary btn-sm qty-btn" type="button" data-qty-action="plus" data-target-id="{{ $menuItem->id }}" data-max="{{ $menuItem->stock }}" aria-label="Tambah">
+                                                            <i class="bi bi-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="d-grid gap-2">
+                                                    <button class="btn btn-dark btn-lg title-button" type="submit">
+                                                        <span>Tambah</span>
+                                                        <span id="submitTotal-{{ $menuItem->id }}">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     @endforeach
                 </div>
             @else
@@ -712,6 +890,96 @@
                 customerToast.remove();
             }, 5200);
         }
+
+        function formatRupiah(value) {
+            return 'Rp' + new Intl.NumberFormat('id-ID').format(Math.max(0, Math.round(value)));
+        }
+
+        function updateModalTotal(menuId) {
+            const qtyInput = document.getElementById(`quantityInput-${menuId}`);
+            const totalLabel = document.getElementById(`modalTotal-${menuId}`);
+            const submitTotal = document.getElementById(`submitTotal-${menuId}`);
+
+            if (!qtyInput) {
+                return;
+            }
+
+            const qty = Number(qtyInput.value || 1);
+            const unitPrice = Number(qtyInput.dataset.unitPrice || 0);
+            const total = formatRupiah(qty * unitPrice);
+
+            if (totalLabel) {
+                totalLabel.textContent = total;
+            }
+
+            if (submitTotal) {
+                submitTotal.textContent = total;
+            }
+        }
+
+        document.querySelectorAll('[data-qty-action]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const menuId = button.dataset.targetId;
+                const action = button.dataset.qtyAction;
+                const max = Number(button.dataset.max || 999);
+                const qtyValue = document.getElementById(`qtyValue-${menuId}`);
+                const qtyInput = document.getElementById(`quantityInput-${menuId}`);
+
+                if (!qtyInput || !qtyValue) {
+                    return;
+                }
+
+                let qty = Number(qtyInput.value || 1);
+
+                if (action === 'minus' && qty > 1) {
+                    qty -= 1;
+                }
+
+                if (action === 'plus' && qty < max) {
+                    qty += 1;
+                }
+
+                qtyInput.value = qty;
+                qtyValue.textContent = qty;
+                updateModalTotal(menuId);
+            });
+        });
+
+        document.querySelectorAll('.modal').forEach((modal) => {
+            modal.addEventListener('show.bs.modal', () => {
+                const qtyInput = modal.querySelector('input[name="quantity"]');
+                const qtyValue = modal.querySelector('[id^="qtyValue-"]');
+
+                if (!qtyInput) {
+                    return;
+                }
+
+                const menuId = qtyInput.id.replace('quantityInput-', '');
+                qtyInput.value = 1;
+
+                if (qtyValue) {
+                    qtyValue.textContent = '1';
+                }
+
+                updateModalTotal(menuId);
+            });
+        });
+
+        document.querySelectorAll('[data-menu-card-trigger]').forEach((card) => {
+            card.addEventListener('keydown', (event) => {
+                if (!['Enter', ' '].includes(event.key)) {
+                    return;
+                }
+
+                event.preventDefault();
+                const modalSelector = card.dataset.bsTarget;
+                const modalElement = modalSelector ? document.querySelector(modalSelector) : null;
+
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        });
 
         const liveSearchInput = document.getElementById('liveSearchInput');
         const suggestionPanel = document.getElementById('suggestionPanel');
