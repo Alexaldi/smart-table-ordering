@@ -51,15 +51,120 @@
             position: relative;
         }
 
-        .search-icon {
+        .suggestion-panel {
             position: absolute;
-            left: 16px;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            background: #fff;
+            border: 1px solid #eee0d0;
+            border-radius: 14px;
+            box-shadow: 0 16px 34px rgba(44, 30, 20, 0.12);
+            padding: 8px;
+            display: none;
+            max-height: 310px;
+            overflow-y: auto;
+        }
+
+        .suggestion-panel.is-visible {
+            display: block;
+        }
+
+        .suggestion-item {
+            width: 100%;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            padding: 10px 11px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            text-align: left;
+            color: #222;
+            transition: background 0.18s;
+        }
+
+        .suggestion-item:hover {
+            background: #fff8ef;
+        }
+
+        .suggestion-name {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .suggestion-category {
+            display: block;
+            color: #987252;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .suggestion-price {
+            color: #d4a574;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .quick-suggestions {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 2px 0 14px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .quick-suggestions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .quick-chip {
+            flex-shrink: 0;
+            border: 1px solid #eadfd2;
+            background: #fff;
+            color: #6f4c35;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.18s;
+        }
+
+        .quick-chip:hover {
+            background: #d4a574;
+            border-color: #d4a574;
+            color: #fff;
+        }
+
+        .search-submit {
+            position: absolute;
+            left: 7px;
             top: 50%;
             transform: translateY(-50%);
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
             color: #999;
-            font-size: 16px;
+            font-size: 17px;
             z-index: 1;
-            pointer-events: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s;
+        }
+
+        .search-submit:hover {
+            background: #f1ebe4;
+            color: #6f4c35;
         }
 
         .search-input {
@@ -150,6 +255,10 @@
             border-bottom: 1px solid #f0f0f0;
             align-items: flex-start;
             transition: background 0.2s;
+        }
+
+        .menu-list-item.is-hidden {
+            display: none;
         }
 
         .menu-list-item:hover {
@@ -270,11 +379,6 @@
             z-index: 2;
         }
 
-        .stock {
-            color: #777;
-            font-size: 12px;
-        }
-
         .btn-add {
             flex-shrink: 0;
             padding: 8px 24px;
@@ -328,6 +432,55 @@
         .btn-browse:hover {
             background: #d4a574;
             color: #fff;
+        }
+
+        .customer-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            transform: translateX(-50%);
+            z-index: 1100;
+            width: min(520px, calc(100% - 28px));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            background: rgba(34, 34, 34, 0.96);
+            color: #fff;
+            border-radius: 14px;
+            padding: 12px 14px 12px 16px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+        }
+
+        .customer-toast .toast-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .customer-toast .toast-message i {
+            color: #d4a574;
+            font-size: 18px;
+        }
+
+        .toast-cart-link {
+            border: 1px solid rgba(212, 165, 116, 0.8);
+            background: #d4a574;
+            color: #fff;
+            border-radius: 9px;
+            padding: 8px 11px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .toast-cart-link:hover {
+            color: #fff;
+            background: #c49464;
         }
 
         @media (max-width: 576px) {
@@ -394,6 +547,16 @@
 </head>
 
 <body>
+    @if (session('success'))
+        <div class="customer-toast" id="customerToast" role="status">
+            <div class="toast-message">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+            <a href="{{ route('customer-menu.cart', ['token' => $token]) }}" class="toast-cart-link">Lihat Keranjang</a>
+        </div>
+    @endif
+
     <header class="search-header sticky-top">
         <div class="container">
             <div class="d-flex align-items-center gap-3">
@@ -402,8 +565,11 @@
                 </a>
 
                 <form action="{{ route('customer-menu.search', ['token' => $token]) }}" method="GET" class="search-box flex-grow-1">
-                    <i class="bi bi-search search-icon"></i>
-                    <input type="text" name="q" value="{{ $keyword }}" class="form-control search-input" placeholder="What are you craving today?" autofocus>
+                    <button type="submit" class="search-submit" aria-label="Cari">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <input type="text" name="q" value="{{ $keyword }}" class="form-control search-input" id="liveSearchInput" placeholder="What are you craving today?" autocomplete="off" autofocus>
+                    <div class="suggestion-panel" id="suggestionPanel"></div>
                 </form>
 
                 <a href="{{ route('customer-menu.cart', ['token' => $token]) }}" class="cart-link position-relative" aria-label="Keranjang">
@@ -428,15 +594,21 @@
                 </h5>
                 <p class="section-meta">
                     @if ($keyword)
-                        "{{ $keyword }}" - {{ $menuItems->count() }} menu ditemukan
+                        <span id="searchMeta">"{{ $keyword }}" - {{ $menuItems->count() }} menu ditemukan</span>
                     @else
-                        {{ $menuItems->count() }} menu tersedia
+                        <span id="searchMeta">{{ $menuItems->count() }} menu tersedia</span>
                     @endif
                 </p>
             </div>
 
             @if ($menuItems->count() > 0)
-                <div class="menu-list">
+                <div class="quick-suggestions" id="quickSuggestions">
+                    @foreach ($menuItems->take(10) as $quickItem)
+                        <button class="quick-chip" type="button" data-suggestion-value="{{ $quickItem->name }}">{{ $quickItem->name }}</button>
+                    @endforeach
+                </div>
+
+                <div class="menu-list" id="menuList">
                     @foreach ($menuItems as $menuItem)
                         @php
                             $imageUrl = $menuItem->image_url;
@@ -457,7 +629,16 @@
                             $finalPrice = $menuItem->finalPrice();
                         @endphp
 
-                        <article class="menu-list-item">
+                        <article
+                            class="menu-list-item"
+                            data-menu-item
+                            data-name="{{ \Illuminate\Support\Str::lower($menuItem->name) }}"
+                            data-category="{{ \Illuminate\Support\Str::lower($menuItem->category->name ?? 'menu') }}"
+                            data-description="{{ \Illuminate\Support\Str::lower($menuItem->description ?? '') }}"
+                            data-display-name="{{ $menuItem->name }}"
+                            data-display-category="{{ $menuItem->category->name ?? 'Menu' }}"
+                            data-display-price="Rp{{ number_format($hasDiscount ? $finalPrice : $menuItem->price, 0, ',', '.') }}"
+                        >
                             <div class="menu-thumb">
                                 @if ($hasDiscount)
                                     <span class="discount-badge">{{ rtrim(rtrim(number_format($discountPercentage, 2, ',', '.'), '0'), ',') }}%</span>
@@ -485,7 +666,6 @@
                                         @else
                                             <span class="discounted-price">Rp{{ number_format($menuItem->price, 0, ',', '.') }}</span>
                                         @endif
-                                        <span class="stock">Stock {{ $menuItem->stock }}</span>
                                     </div>
 
                                     <form action="{{ route('customer-menu.cart.add', ['token' => $token]) }}" method="POST">
@@ -501,7 +681,7 @@
                     @endforeach
                 </div>
             @else
-                <div class="empty-state">
+                <div class="empty-state" id="emptyState">
                     <i class="bi bi-search"></i>
                     <h5 class="mb-2">Menu tidak ditemukan</h5>
                     <p class="mb-4">Coba kata kunci lain atau lihat semua menu dari meja {{ $table->table_number }}.</p>
@@ -510,10 +690,153 @@
                     </a>
                 </div>
             @endif
+
+            @if ($menuItems->count() > 0)
+                <div class="empty-state d-none" id="liveEmptyState">
+                    <i class="bi bi-search"></i>
+                    <h5 class="mb-2">Menu tidak ditemukan</h5>
+                    <p class="mb-4">Coba kata kunci lain atau pilih suggestion yang tersedia.</p>
+                    <button type="button" class="btn-browse border-0" id="clearSearchButton">
+                        <i class="bi bi-x-circle"></i> Bersihkan Pencarian
+                    </button>
+                </div>
+            @endif
         </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const customerToast = document.getElementById('customerToast');
+        if (customerToast) {
+            window.setTimeout(() => {
+                customerToast.remove();
+            }, 5200);
+        }
+
+        const liveSearchInput = document.getElementById('liveSearchInput');
+        const suggestionPanel = document.getElementById('suggestionPanel');
+        const searchMeta = document.getElementById('searchMeta');
+        const menuItems = Array.from(document.querySelectorAll('[data-menu-item]'));
+        const liveEmptyState = document.getElementById('liveEmptyState');
+        const menuList = document.getElementById('menuList');
+        const quickSuggestions = document.getElementById('quickSuggestions');
+        const clearSearchButton = document.getElementById('clearSearchButton');
+        const totalMenus = menuItems.length;
+
+        function normalize(value) {
+            return String(value || '').toLowerCase().trim();
+        }
+
+        function searchableText(item) {
+            return [
+                item.dataset.name,
+                item.dataset.category,
+                item.dataset.description
+            ].join(' ');
+        }
+
+        function setMeta(query, count) {
+            if (!searchMeta) {
+                return;
+            }
+
+            searchMeta.textContent = query
+                ? `"${query}" - ${count} menu ditemukan`
+                : `${totalMenus} menu tersedia`;
+        }
+
+        function renderSuggestions(query, matches) {
+            if (!suggestionPanel) {
+                return;
+            }
+
+            if (!query || matches.length === 0) {
+                suggestionPanel.classList.remove('is-visible');
+                suggestionPanel.innerHTML = '';
+                return;
+            }
+
+            suggestionPanel.innerHTML = matches.slice(0, 7).map((item) => `
+                <button class="suggestion-item" type="button" data-suggestion-value="${item.dataset.displayName}">
+                    <span>
+                        <span class="suggestion-name">${item.dataset.displayName}</span>
+                        <span class="suggestion-category">${item.dataset.displayCategory}</span>
+                    </span>
+                    <span class="suggestion-price">${item.dataset.displayPrice}</span>
+                </button>
+            `).join('');
+
+            suggestionPanel.classList.add('is-visible');
+        }
+
+        function applySearch(value) {
+            const query = normalize(value);
+            const matches = [];
+
+            menuItems.forEach((item) => {
+                const isMatch = !query || searchableText(item).includes(query);
+                item.classList.toggle('is-hidden', !isMatch);
+
+                if (isMatch) {
+                    matches.push(item);
+                }
+            });
+
+            setMeta(query, matches.length);
+            renderSuggestions(query, matches);
+
+            if (liveEmptyState && menuList) {
+                liveEmptyState.classList.toggle('d-none', matches.length > 0);
+                menuList.classList.toggle('d-none', matches.length === 0);
+            }
+
+            if (quickSuggestions) {
+                quickSuggestions.classList.toggle('d-none', Boolean(query));
+            }
+        }
+
+        if (liveSearchInput) {
+            liveSearchInput.closest('form')?.addEventListener('submit', (event) => {
+                event.preventDefault();
+                applySearch(liveSearchInput.value);
+                suggestionPanel?.classList.remove('is-visible');
+                liveSearchInput.blur();
+            });
+
+            liveSearchInput.addEventListener('input', () => {
+                applySearch(liveSearchInput.value);
+            });
+
+            liveSearchInput.addEventListener('focus', () => {
+                applySearch(liveSearchInput.value);
+            });
+
+            applySearch(liveSearchInput.value);
+        }
+
+        document.addEventListener('click', (event) => {
+            const suggestionButton = event.target.closest('[data-suggestion-value]');
+
+            if (suggestionButton && liveSearchInput) {
+                liveSearchInput.value = suggestionButton.dataset.suggestionValue;
+                applySearch(liveSearchInput.value);
+                suggestionPanel?.classList.remove('is-visible');
+                return;
+            }
+
+            if (!event.target.closest('.search-box')) {
+                suggestionPanel?.classList.remove('is-visible');
+            }
+        });
+
+        if (clearSearchButton && liveSearchInput) {
+            clearSearchButton.addEventListener('click', () => {
+                liveSearchInput.value = '';
+                applySearch('');
+                liveSearchInput.focus();
+            });
+        }
+    </script>
 </body>
 
 </html>

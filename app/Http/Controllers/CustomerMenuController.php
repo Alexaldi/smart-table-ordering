@@ -233,9 +233,7 @@ class CustomerMenuController extends Controller
 
         session()->put($cartKey, $cart);
 
-        return redirect()
-            ->route('customer-menu.cart', ['token' => $token])
-            ->with('success', 'Menu berhasil ditambahkan ke cart.');
+        return back()->with('success', 'Menu berhasil ditambahkan ke keranjang.');
     }
 
     /**
