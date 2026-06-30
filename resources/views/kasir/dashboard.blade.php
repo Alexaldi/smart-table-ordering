@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    @include('components.style')
+
+    @php
+        $kasirUser = auth()->user();
+        $kasirUser?->loadMissing('shift');
+        $kasirShift = $kasirUser?->shift;
+        $shiftEndsAt = $kasirShift && $kasirShift->isActiveAt() ? $kasirShift->endDateTimeFrom() : null;
+    @endphp
+
+    <style>
+        body.kasir-dashboard {
+            min-height: 100vh;
+            background: #f4f7fb;
+            color: #111827;
+        }
+
+        .ks-shell {
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .ks-page {
+            width: min(100%, 1180px);
+            margin: 0 auto;
+        }
+
+        .ks-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .ks-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .ks-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .ks-icon-box i {
+            font-size: 21px;
+        }
+
+        .ks-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 3px;
+            letter-spacing: 0;
+        }
+
+        .ks-subtitle {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .ks-user-panel {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 10px 12px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .04);
+        }
+
+        .ks-shift-pill {
+            min-height: 36px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            border-radius: 8px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .ks-user {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-width: 0;
+        }
+
+        .ks-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #eff6ff;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .ks-user-label {
+            font-size: 11px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: .05em;
+            margin-bottom: 1px;
+        }
+
+        .ks-user-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .ks-logout {
+            height: 36px;
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            color: #374151;
+            border-radius: 8px;
+            padding: 0 13px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: background .15s ease, color .15s ease, border-color .15s ease;
+        }
+
+        .ks-logout:hover,
+        .ks-logout:focus {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            color: #111827;
+        }
+
+        .ks-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .ks-stat-card,
+        .ks-panel {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .04);
+        }
+
+        .ks-stat-card {
+            padding: 17px;
+        }
+
+        .ks-stat-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .ks-stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 700;
+        }
+
+        .ks-stat-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: #eff6ff;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .ks-stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #111827;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .ks-stat-note {
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        .ks-main-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) minmax(280px, .8fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .ks-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 17px 18px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .ks-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+        }
+
+        .ks-panel-title i {
+            color: #2563eb;
+        }
+
+        .ks-panel-meta {
+            color: #9ca3af;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .ks-orders {
+            padding: 10px;
+        }
+
+        .ks-order {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 12px;
+            padding: 13px;
+            border-radius: 10px;
+            transition: background .15s ease;
+        }
+
+        .ks-order + .ks-order {
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .ks-order:hover {
+            background: #f9fafb;
+        }
+
+        .ks-order-code {
+            font-size: 14px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .ks-order-info {
+            color: #6b7280;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .ks-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ks-status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #2563eb;
+            flex: 0 0 auto;
+        }
+
+        .ks-status.wait .ks-status-dot {
+            background: #f59e0b;
+        }
+
+        .ks-status.process .ks-status-dot {
+            background: #2563eb;
+        }
+
+        .ks-status.done .ks-status-dot {
+            background: #16a34a;
+        }
+
+        .ks-actions-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .ks-small-btn {
+            min-height: 34px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #374151;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s ease, border-color .15s ease, color .15s ease;
+        }
+
+        .ks-small-btn:hover,
+        .ks-small-btn:focus {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            color: #111827;
+            text-decoration: none;
+        }
+
+        .ks-small-btn.primary {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+        }
+
+        .ks-small-btn.primary:hover,
+        .ks-small-btn.primary:focus {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+            color: #ffffff;
+        }
+
+        .ks-quick-list {
+            display: grid;
+            gap: 10px;
+            padding: 14px;
+        }
+
+        .ks-quick-action {
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #f9fafb;
+            color: #111827;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+        }
+
+        .ks-quick-action i {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .ks-quick-action:hover,
+        .ks-quick-action:focus {
+            background: #ffffff;
+            border-color: #93c5fd;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, .08);
+            color: #111827;
+            text-decoration: none;
+        }
+
+        @media (max-width: 991.98px) {
+            .ks-shell {
+                padding: 18px;
+            }
+
+            .ks-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .ks-user-panel {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .ks-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .ks-main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .ks-shell {
+                padding: 14px;
+            }
+
+            .ks-title {
+                font-size: 21px;
+            }
+
+            .ks-subtitle {
+                font-size: 13px;
+            }
+
+            .ks-user-panel {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .ks-user-name {
+                max-width: none;
+            }
+
+            .ks-logout {
+                width: 100%;
+            }
+
+            .ks-stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .ks-panel-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .ks-panel-meta {
+                white-space: normal;
+            }
+
+            .ks-order {
+                grid-template-columns: 1fr;
+            }
+
+            .ks-actions-row {
+                justify-content: stretch;
+            }
+
+            .ks-small-btn {
+                flex: 1 1 0;
+            }
+        }
+    </style>
+</head>
+<body class="kasir-dashboard">
+    <main class="ks-shell">
+        <div class="ks-page">
+            <header class="ks-header">
+                <div class="ks-title-wrap">
+                    <div class="ks-icon-box" aria-hidden="true">
+                        <i class="fe fe-credit-card"></i>
+                    </div>
+                    <div>
+                        <h1 class="ks-title">Dashboard Kasir</h1>
+                        <p class="ks-subtitle">Kelola pesanan dan pembayaran dari satu tempat.</p>
+                    </div>
+                </div>
+
+                <div class="ks-user-panel">
+                    <div class="ks-user">
+                        <div class="ks-avatar" aria-hidden="true">
+                            <i class="fe fe-user"></i>
+                        </div>
+                        <div>
+                            <div class="ks-user-label">Staf masuk</div>
+                            <div class="ks-user-name">{{ $kasirUser->name }}</div>
+                        </div>
+                    </div>
+
+                    <div class="ks-shift-pill">
+                        <i class="fe fe-clock"></i>
+                        @if($kasirShift)
+                            <span>{{ $kasirShift->name }} {{ substr($kasirShift->start_time, 0, 5) }} - {{ substr($kasirShift->end_time, 0, 5) }}</span>
+                        @else
+                            <span>Shift belum diatur</span>
+                        @endif
+                    </div>
+
+                    <form method="POST" action="{{ route('logout') }}" class="mb-0" id="kasirLogoutForm">
+                        @csrf
+                        <button type="submit" class="ks-logout">
+                            <i class="fe fe-log-out"></i>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <section class="ks-stats" aria-label="Ringkasan kasir">
+                <article class="ks-stat-card">
+                    <div class="ks-stat-top">
+                        <div class="ks-stat-label">Pesanan Baru</div>
+                        <div class="ks-stat-icon"><i class="fe fe-bell"></i></div>
+                    </div>
+                    <div class="ks-stat-value">8</div>
+                    <div class="ks-stat-note">Menunggu diproses</div>
+                </article>
+
+                <article class="ks-stat-card">
+                    <div class="ks-stat-top">
+                        <div class="ks-stat-label">Pesanan Diproses</div>
+                        <div class="ks-stat-icon"><i class="fe fe-refresh-cw"></i></div>
+                    </div>
+                    <div class="ks-stat-value">5</div>
+                    <div class="ks-stat-note">Sedang disiapkan</div>
+                </article>
+
+                <article class="ks-stat-card">
+                    <div class="ks-stat-top">
+                        <div class="ks-stat-label">Pembayaran</div>
+                        <div class="ks-stat-icon"><i class="fe fe-dollar-sign"></i></div>
+                    </div>
+                    <div class="ks-stat-value">12</div>
+                    <div class="ks-stat-note">Transaksi hari ini</div>
+                </article>
+
+                <article class="ks-stat-card">
+                    <div class="ks-stat-top">
+                        <div class="ks-stat-label">Meja Aktif</div>
+                        <div class="ks-stat-icon"><i class="fe fe-grid"></i></div>
+                    </div>
+                    <div class="ks-stat-value">6</div>
+                    <div class="ks-stat-note">Sedang digunakan</div>
+                </article>
+            </section>
+
+            <section class="ks-main-grid">
+                <div class="ks-panel">
+                    <div class="ks-panel-header">
+                        <h2 class="ks-panel-title">
+                            <i class="fe fe-list"></i>
+                            <span>Pesanan Terbaru</span>
+                        </h2>
+                        <span class="ks-panel-meta">Antrian hari ini</span>
+                    </div>
+
+                    <div class="ks-orders">
+                        <div class="ks-order">
+                            <div>
+                                <div class="ks-order-code">#A102 - Meja 04</div>
+                                <div class="ks-order-info ks-status wait">
+                                    <span class="ks-status-dot"></span>
+                                    <span>Menunggu pembayaran</span>
+                                </div>
+                            </div>
+                            <div class="ks-actions-row">
+                                <a href="#" class="ks-small-btn">Detail</a>
+                                <button type="button" class="ks-small-btn primary">Proses</button>
+                            </div>
+                        </div>
+
+                        <div class="ks-order">
+                            <div>
+                                <div class="ks-order-code">#A103 - Meja 02</div>
+                                <div class="ks-order-info ks-status process">
+                                    <span class="ks-status-dot"></span>
+                                    <span>Diproses</span>
+                                </div>
+                            </div>
+                            <div class="ks-actions-row">
+                                <a href="#" class="ks-small-btn">Detail</a>
+                                <button type="button" class="ks-small-btn primary">Proses</button>
+                            </div>
+                        </div>
+
+                        <div class="ks-order">
+                            <div>
+                                <div class="ks-order-code">#A104 - Meja 07</div>
+                                <div class="ks-order-info ks-status done">
+                                    <span class="ks-status-dot"></span>
+                                    <span>Selesai</span>
+                                </div>
+                            </div>
+                            <div class="ks-actions-row">
+                                <a href="#" class="ks-small-btn">Detail</a>
+                                <button type="button" class="ks-small-btn primary">Proses</button>
+                            </div>
+                        </div>
+
+                        <div class="ks-order">
+                            <div>
+                                <div class="ks-order-code">#A105 - Meja 01</div>
+                                <div class="ks-order-info ks-status wait">
+                                    <span class="ks-status-dot"></span>
+                                    <span>Menunggu konfirmasi</span>
+                                </div>
+                            </div>
+                            <div class="ks-actions-row">
+                                <a href="#" class="ks-small-btn">Detail</a>
+                                <button type="button" class="ks-small-btn primary">Proses</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="ks-panel">
+                    <div class="ks-panel-header">
+                        <h2 class="ks-panel-title">
+                            <i class="fe fe-zap"></i>
+                            <span>Aksi Cepat</span>
+                        </h2>
+                    </div>
+
+                    <div class="ks-quick-list">
+                        <a href="#" class="ks-quick-action">
+                            <i class="fe fe-clipboard"></i>
+                            <span>Lihat Pesanan</span>
+                        </a>
+                        <a href="#" class="ks-quick-action">
+                            <i class="fe fe-credit-card"></i>
+                            <span>Proses Pembayaran</span>
+                        </a>
+                        <a href="#" class="ks-quick-action">
+                            <i class="fe fe-grid"></i>
+                            <span>Cek Meja</span>
+                        </a>
+                        <a href="#" class="ks-quick-action">
+                            <i class="fe fe-clock"></i>
+                            <span>Riwayat Transaksi</span>
+                        </a>
+                    </div>
+                </aside>
+            </section>
+        </div>
+    </main>
+
+    @if($shiftEndsAt)
+        <script>
+            (function () {
+                const logoutForm = document.getElementById('kasirLogoutForm');
+                const shiftEndsAt = new Date(@json($shiftEndsAt->toIso8601String())).getTime();
+                const delay = shiftEndsAt - Date.now();
+
+                if (!logoutForm || delay <= 0) {
+                    return;
+                }
+
+                window.setTimeout(function () {
+                    if (window.Swal) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Shift selesai',
+                            text: 'Anda akan keluar otomatis dari halaman kasir.',
+                            confirmButtonText: 'OK'
+                        }).then(function () {
+                            logoutForm.submit();
+                        });
+                    } else {
+                        logoutForm.submit();
+                    }
+                }, delay);
+            })();
+        </script>
+    @endif
+</body>
+</html>

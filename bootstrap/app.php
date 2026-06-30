@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\RedirectByRole;
+use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\EnsureKasirShiftIsActive;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,8 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->preventRequestForgery(except: [
             'midtrans/notification',
+        ]);  
+        $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'redirect.role' => RedirectByRole::class,
+            'kasir.shift' => EnsureKasirShiftIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+
     })->create();

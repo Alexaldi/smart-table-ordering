@@ -2,24 +2,52 @@
 
 namespace Database\Seeders;
 
+use App\Models\Shift;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        Shift::updateOrCreate(
+            ['name' => 'Pagi'],
+            [
+                'start_time' => '08:00:00',
+                'end_time' => '16:00:00',
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        Shift::updateOrCreate(
+            ['name' => 'Sore'],
+            [
+                'start_time' => '16:00:00',
+                'end_time' => '23:00:00',
+            ]
+        );
+
+        User::updateOrCreate(
+            ['username' => 'admin'],
+            [
+                'name' => 'Admin',
+                'email' => 'admin@example.com',
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+            ]
+        );
+
+        User::updateOrCreate(
+            ['username' => 'kasir'],
+            [
+                'name' => 'Kasir',
+                'email' => 'kasir@example.com',
+                'password' => Hash::make('password'),
+                'role' => 'kasir',
+            ]
+        );
     }
 }
