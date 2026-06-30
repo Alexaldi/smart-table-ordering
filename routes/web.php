@@ -5,6 +5,13 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DiningTableController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ShiftController;
+use App\Models\Category;
+use App\Models\DiningTable;
+use App\Models\MenuItem;
+use App\Models\Shift;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,7 +55,15 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/dashboard', function () {
-            return view('dashboardAdmin');
+            return view('dashboardAdmin', [
+                'totalUsers' => User::count(),
+                'activeUsers' => User::where('is_active', true)->count(),
+                'totalShifts' => Shift::count(),
+                'totalTables' => DiningTable::count(),
+                'totalCategories' => Category::count(),
+                'totalMenus' => MenuItem::count(),
+                'activeMenus' => MenuItem::where('is_active', true)->count(),
+            ]);
         })->name('dashboard');
 
         Route::resource('menu', MenuController::class)
@@ -76,6 +91,8 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('categories', CategoryController::class);
         Route::resource('tables', DiningTableController::class);
+        Route::resource('users', UserController::class);
+        Route::resource('shifts', ShiftController::class);
     });
 
     /*
@@ -85,7 +102,7 @@ Route::middleware('auth')->group(function () {
     | Khusus user login dengan role kasir.
     */
 
-    Route::middleware('role:kasir')
+    Route::middleware(['role:kasir', 'kasir.shift'])
         ->prefix('kasir')
         ->name('kasir.')
         ->group(function () {
@@ -96,4 +113,3 @@ Route::middleware('auth')->group(function () {
             // route kasir taruh di sini nanti
         });
 });
-

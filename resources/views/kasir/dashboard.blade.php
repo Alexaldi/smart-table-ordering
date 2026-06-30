@@ -4,8 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     @include('components.style')
+
+    @php
+        $kasirUser = auth()->user();
+        $kasirUser?->loadMissing('shift');
+        $kasirShift = $kasirUser?->shift;
+        $shiftEndsAt = $kasirShift && $kasirShift->isActiveAt() ? $kasirShift->endDateTimeFrom() : null;
+    @endphp
 
     <style>
         body.kasir-dashboard {
@@ -79,6 +87,21 @@
             border-radius: 12px;
             padding: 10px 12px;
             box-shadow: 0 4px 12px rgba(15, 23, 42, .04);
+        }
+
+        .ks-shift-pill {
+            min-height: 36px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            border-radius: 8px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
         }
 
         .ks-user {
@@ -481,11 +504,20 @@
                         </div>
                         <div>
                             <div class="ks-user-label">Staf masuk</div>
-                            <div class="ks-user-name">{{ auth()->user()->name }}</div>
+                            <div class="ks-user-name">{{ $kasirUser->name }}</div>
                         </div>
                     </div>
 
-                    <form method="POST" action="{{ route('logout') }}" class="mb-0">
+                    <div class="ks-shift-pill">
+                        <i class="fe fe-clock"></i>
+                        @if($kasirShift)
+                            <span>{{ $kasirShift->name }} {{ substr($kasirShift->start_time, 0, 5) }} - {{ substr($kasirShift->end_time, 0, 5) }}</span>
+                        @else
+                            <span>Shift belum diatur</span>
+                        @endif
+                    </div>
+
+                    <form method="POST" action="{{ route('logout') }}" class="mb-0" id="kasirLogoutForm">
                         @csrf
                         <button type="submit" class="ks-logout">
                             <i class="fe fe-log-out"></i>
@@ -632,5 +664,34 @@
             </section>
         </div>
     </main>
+
+    @if($shiftEndsAt)
+        <script>
+            (function () {
+                const logoutForm = document.getElementById('kasirLogoutForm');
+                const shiftEndsAt = new Date(@json($shiftEndsAt->toIso8601String())).getTime();
+                const delay = shiftEndsAt - Date.now();
+
+                if (!logoutForm || delay <= 0) {
+                    return;
+                }
+
+                window.setTimeout(function () {
+                    if (window.Swal) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Shift selesai',
+                            text: 'Anda akan keluar otomatis dari halaman kasir.',
+                            confirmButtonText: 'OK'
+                        }).then(function () {
+                            logoutForm.submit();
+                        });
+                    } else {
+                        logoutForm.submit();
+                    }
+                }, delay);
+            })();
+        </script>
+    @endif
 </body>
 </html>

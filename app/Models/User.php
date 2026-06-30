@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
-#[Fillable(['shift_id', 'name', 'username', 'email', 'password', 'role'])]
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+#[Fillable(['shift_id', 'name', 'username', 'email', 'password', 'role', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -53,6 +53,10 @@ class User extends Authenticatable
         return $this->hasMany(KitchenQueue::class, 'confirmed_by');
     }
 
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class);
+    }
     /**
      * Get the attributes that should be cast.
      *
@@ -61,7 +65,9 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 }

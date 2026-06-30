@@ -9,7 +9,17 @@
 <div class="side-app">
     <div class="row">
         <div class="col-12 col-sm-12">
-            <div class="card mt-5">
+            <div class="sto-child-nav mt-5">
+                <ol class="sto-breadcrumb">
+                    <li><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ route('menu.index') }}">Menus</a></li>
+                    <li><span class="active">{{ $isEdit ? 'Edit Menu' : 'Tambah Menu' }}</span></li>
+                </ol>
+                <a href="{{ route('menu.index') }}" class="sto-page-back">
+                    <i class="fe fe-arrow-left"></i> Kembali ke Menus
+                </a>
+            </div>
+            <div class="card mt-3">
                 <div class="card-header">
                     <h3 class="card-title mb-0">
                         {{ $isEdit ? 'Edit Menu Item' : 'Create Menu Item' }}

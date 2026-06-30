@@ -27,14 +27,43 @@ class LoginController extends Controller
                 ])
                 ->onlyInput('email');
         }
+        $user = Auth::user();
+
+        if ($user->is_active === false) {
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()
+                ->route('login')
+                ->withErrors([
+                    'email' => 'Akun ini sedang tidak aktif.',
+                ]);
+        }
+
+        $user->loadMissing('shift');
+
+        if ($user->role === 'kasir' && $user->shift && ! $user->shift->isActiveAt()) {
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()
+                ->route('login')
+                ->withErrors([
+                    'email' => 'Akun ini hanya bisa digunakan sesuai jadwal shift.',
+                ]);
+        }
 
         $request->session()->regenerate();
 
-        if (Auth::user()->role === 'admin') {
+        if ($user->role === 'admin') {
             return redirect()->route('dashboard');
         }
 
-        if (Auth::user()->role === 'kasir') {
+        if ($user->role === 'kasir') {
             return redirect()->route('kasir.dashboard');
         }
 

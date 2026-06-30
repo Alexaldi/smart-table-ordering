@@ -81,6 +81,17 @@
 .tm-input-error { border-color: #dc2626 !important; }
 .tm-error-msg { font-size: 12px; color: #dc2626; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
 
+.sto-child-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.sto-breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: #6b7280; }
+.sto-breadcrumb li { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.sto-breadcrumb li + li::before { content: "/"; color: #cbd5e1; font-weight: 700; }
+.sto-breadcrumb a { color: #2563eb; font-weight: 700; text-decoration: none; }
+.sto-breadcrumb a:hover { color: #1d4ed8; text-decoration: none; }
+.sto-breadcrumb .active { color: #111827; font-weight: 700; }
+.sto-page-back { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e40af !important; border-radius: 8px; padding: 0 14px; font-size: 13px; font-weight: 700; box-shadow: 0 6px 14px rgba(37,99,235,.08); }
+.sto-page-back:hover { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8 !important; text-decoration: none; }
+.sto-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
 .tm-btn-primary { width: 100%; height: 38px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .15s; }
 .tm-btn-primary:hover { background: #1d4ed8; }
 .tm-btn-primary:active { transform: scale(.98); }
@@ -144,5 +155,9 @@
     .tm-status-dot { flex-shrink: 0; margin-left: auto; white-space: nowrap; }
     .tm-card-footer { justify-content: stretch; }
     .tm-action-btn { flex: 1 1 0; justify-content: center; min-height: 34px; }
+    .sto-child-nav { align-items: flex-start; flex-direction: column; }
+    .sto-page-back { width: 100%; }
+    .sto-header-actions { width: 100%; margin-left: 0; }
+    .sto-header-actions .sto-page-back { width: 100%; }
 }
 </style>
