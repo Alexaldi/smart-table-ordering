@@ -1,50 +1,99 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TestCommitController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DiningTableController;
-use App\Http\Controllers\CustomerMenuController;
 
-// Redirect halaman awal ke dashboard admin
+/*
+|--------------------------------------------------------------------------
+| Guest routes
+|--------------------------------------------------------------------------
+| Route di sini hanya bisa diakses user yang belum login.
+*/
+
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    return redirect()->route('login');
 });
 
-// Halaman dashboard admin
-Route::get('/dashboard', function () {
-    return view('dashboardAdmin');
-})->name('dashboard');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'showLogin'])
+        ->name('login');
 
-// Route CRUD menu
-Route::resource('menu', MenuController::class)
-    ->parameters(['menu' => 'menuItem']);
+    Route::post('/login', [LoginController::class, 'login'])
+        ->name('login.process');
 
-// Route tambahan untuk fitur menu
-Route::get('menu/{menuItem}/quick-edit', [MenuController::class, 'editQuick'])
-    ->name('menu.quick-edit');
+    require __DIR__ . '/members/gilang.php';
+});
 
-Route::put('menu/{menuItem}/quick-update', [MenuController::class, 'updateQuick'])
-    ->name('menu.quick-update');
+/*
+|--------------------------------------------------------------------------
+| Auth routes
+|--------------------------------------------------------------------------
+| Route di sini hanya bisa diakses user yang sudah login.
+| Logout dan fitur umum user login taruh di sini.
+*/
 
-Route::post('menu/import/preview', [MenuController::class, 'importPreview'])
-    ->name('menu.import.preview');
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [LoginController::class, 'logout'])
+        ->name('logout');
 
-Route::post('menu/import/store', [MenuController::class, 'importStore'])
-    ->name('menu.import.store');
+    /*
+    |--------------------------------------------------------------------------
+    | Admin routes
+    |--------------------------------------------------------------------------
+    | Khusus user login dengan role admin.
+    */
 
-Route::post('menu/{menuItem}/discount', [MenuController::class, 'storeDiscount'])
-    ->name('menu.discount.store');
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('dashboardAdmin');
+        })->name('dashboard');
 
-Route::delete('menu/{menuItem}/discount/{discount}', [MenuController::class, 'destroyDiscount'])
-    ->name('menu.discount.destroy');
+        Route::resource('menu', MenuController::class)
+            ->parameters(['menu' => 'menuItem']);
 
-// Route CRUD kategori
-Route::resource('categories', CategoryController::class);
+        Route::prefix('menu')->name('menu.')->group(function () {
+            Route::get('{menuItem}/quick-edit', [MenuController::class, 'editQuick'])
+                ->name('quick-edit');
 
-// Route CRUD meja makan
-Route::resource('tables', DiningTableController::class);
+            Route::put('{menuItem}/quick-update', [MenuController::class, 'updateQuick'])
+                ->name('quick-update');
 
-// Route untuk halaman guest/customer
-require __DIR__ . '/members/gilang.php';
+            Route::post('import/preview', [MenuController::class, 'importPreview'])
+                ->name('import.preview');
+
+            Route::post('import/store', [MenuController::class, 'importStore'])
+                ->name('import.store');
+
+            Route::post('{menuItem}/discount', [MenuController::class, 'storeDiscount'])
+                ->name('discount.store');
+
+            Route::delete('{menuItem}/discount/{discount}', [MenuController::class, 'destroyDiscount'])
+                ->name('discount.destroy');
+        });
+
+        Route::resource('categories', CategoryController::class);
+        Route::resource('tables', DiningTableController::class);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Kasir routes
+    |--------------------------------------------------------------------------
+    | Khusus user login dengan role kasir.
+    */
+
+    Route::middleware('role:kasir')
+        ->prefix('kasir')
+        ->name('kasir.')
+        ->group(function () {
+            Route::get('/dashboard', function () {
+                return view('kasir.dashboard');
+            })->name('dashboard');
+
+            // route kasir taruh di sini nanti
+        });
+});
+

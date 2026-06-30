@@ -1,3 +1,8 @@
+@php
+    $currentUser = auth()->user();
+    $sidebarUsername = $currentUser?->username ?: ($currentUser?->name ?: 'Staf');
+@endphp
+
 <!-- navbar -->
 <div class="app-header header">
     <div class="container-fluid">
@@ -58,22 +63,27 @@
                     <div class="card-body text-center">
                         <div class="dropdown user-pro-body">
                             <div class="">
-                                <img alt="user-img" class="avatar avatar-xl brround mx-auto text-center" src="{{ asset('assets/images/faces/6.jpg') }}"><span class="avatar-status profile-status bg-green"></span>
+                                <div class="avatar avatar-xl brround mx-auto text-center bg-primary text-white d-flex align-items-center justify-content-center">
+                                    <i class="fe fe-user tx-30"></i>
+                                </div>
+                                <span class="avatar-status profile-status bg-green"></span>
                             </div>
                             <div class="user-info mg-t-20">
-                                <h6 class="fw-semibold  mt-2 mb-0">Mintrona Pechon</h6>
-                                <span class="mb-0 text-muted fs-12">Premium Member</span>
+                                <h6 class="fw-semibold  mt-2 mb-0">{{ $sidebarUsername }}</h6>
                             </div>
                         </div>
                     </div>
-                    <a class="dropdown-item d-flex border-bottom" href="login.html">
-                        <div class="d-flex"><i class="fe fe-power me-3 tx-20 text-muted"></i>
-                            <div class="pt-1">
-                                <h6 class="mb-0">Sign Out</h6>
-                                <p class="tx-12 mb-0 text-muted">Account Signout</p>
+                    <form method="POST" action="{{ route('logout') }}" class="mb-0">
+                        @csrf
+                        <button type="submit" class="dropdown-item d-flex border-bottom bg-transparent border-0 w-100 text-start">
+                            <div class="d-flex"><i class="fe fe-power me-3 tx-20 text-muted"></i>
+                                <div class="pt-1">
+                                    <h6 class="mb-0">Logout</h6>
+                                    <p class="tx-12 mb-0 text-muted">Keluar dari akun</p>
+                                </div>
                             </div>
-                        </div>
-                    </a>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
