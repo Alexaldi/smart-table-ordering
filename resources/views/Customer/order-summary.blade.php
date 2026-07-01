@@ -338,6 +338,13 @@
                 </div>
             </div>
 
+            <div class="card shadow-sm border-0 mb-3" id="countdown-card" style="display: none;">
+                <div class="card-body text-center">
+                    <small class="text-muted">Estimasi Pesanan Siap</small>
+                    <h2 id="countdown" class="fw-bold text-warning mb-0 mt-2">--:--</h2>
+                </div>
+            </div>
+
             <section class="section">
                 <h2 class="section-title">Ordered Items</h2>
 
@@ -391,5 +398,53 @@
             </a>
         </div>
     </main>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const card = document.getElementById("countdown-card");
+        const countdownEl = document.getElementById("countdown");
+        let finishTime = null;
+        let tickInterval = null;
+
+        function tick() {
+            if (!finishTime) return;
+            const distance = finishTime - Date.now();
+
+            if (distance <= 0) {
+                countdownEl.innerHTML = "Pesanan Hampir Siap";
+                clearInterval(tickInterval);
+                tickInterval = null;
+                return;
+            }
+
+            const minutes = Math.floor(distance / 60000);
+            const seconds = Math.floor((distance % 60000) / 1000);
+            countdownEl.innerHTML = String(minutes).padStart(2,'0') + ":" + String(seconds).padStart(2,'0');
+        }
+
+        async function pollStatus() {
+            try {
+                const res = await fetch("{{ route('customer.order.countdown', ['token' => $token, 'order' => $order->id]) }}");
+                const data = await res.json();
+
+                if (data.has_queue && data.countdown_end) {
+                    card.style.display = "block";
+                    finishTime = new Date(data.countdown_end).getTime();
+
+                    if (!tickInterval) {
+                        tick();
+                        tickInterval = setInterval(tick, 1000);
+                    }
+                } else {
+                    card.style.display = "none";
+                }
+            } catch (e) {
+                console.error("gagal ambil status countdown", e);
+            }
+        }
+
+        pollStatus();
+        setInterval(pollStatus, 5000); // cek ke server tiap 5 detik
+    });
+    </script>
 </body>
 </html>

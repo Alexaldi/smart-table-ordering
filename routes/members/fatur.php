@@ -10,3 +10,7 @@ Route::get('/customer-menu/{token}/order-summary/{order:order_code}', [CustomerM
     ->name('customer-menu.order-summary');
 Route::post('/midtrans/notification', [MidtransNotificationController::class, 'handle'])
     ->name('midtrans.notification');
+Route::get('/customer-menu/{token}/order-status/{order:order_code}', [CustomerMenuController::class, 'orderStatus'])
+    ->name('customer-menu.order-status');
+Route::get('/customer/{token}/order/{order}/countdown', [CustomerMenuController::class, 'countdownStatus'])
+    ->name('customer.order.countdown');

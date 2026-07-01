@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DiningTableController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ShiftController;
+use App\Http\Controllers\CashierPaymentController;
+use App\Http\Controllers\KitchenController;
 use App\Models\Category;
 use App\Models\DiningTable;
 use App\Models\MenuItem;
@@ -32,6 +34,7 @@ Route::middleware('guest')->group(function () {
         ->name('login.process');
 
     require __DIR__ . '/members/gilang.php';
+    require __DIR__ . '/members/fatur.php';
 });
 
 /*
@@ -102,47 +105,45 @@ Route::middleware('auth')->group(function () {
     | Khusus user login dengan role kasir.
     */
 
-    Route::middleware(['role:kasir', 'kasir.shift'])
+    Route::middleware(['role:kasir', 'shift.active'])
         ->prefix('kasir')
         ->name('kasir.')
         ->group(function () {
-            Route::get('/dashboard', function () {
-                return view('kasir.dashboard');
-            })->name('dashboard');
+            Route::get('/dashboard', [CashierPaymentController::class, 'index'])
+                ->name('dashboard');
 
-            // route kasir taruh di sini nanti
+            Route::get('/orders/{order}/receipt', [CashierPaymentController::class, 'receipt'])
+                ->name('orders.receipt');
+
+            Route::post('/orders/{order}/reject-items', [CashierPaymentController::class, 'rejectItems'])
+                ->name('orders.reject-items');
+
+            Route::post('/cashier/orders/{order}/pay-cash', [CashierPaymentController::class, 'payCash'])
+                ->name('orders.pay-cash');
         });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dapur routes
+    |--------------------------------------------------------------------------
+    | Khusus user login dengan role dapur.
+    */
+
+    Route::middleware(['role:dapur', 'shift.active'])
+    ->prefix('dapur')
+    ->name('dapur.')
+    ->group(function () {
+        Route::get('/dashboard', [KitchenController::class, 'index'])
+            ->name('dashboard');
+
+        Route::get('/orders/{order}', [KitchenController::class, 'show'])
+            ->name('orders.show');
+
+        Route::post('/orders/{order}/prepare', [KitchenController::class, 'prepare'])
+            ->name('orders.prepare');
+
+        Route::post('/orders/{order}/done', [KitchenController::class, 'done'])
+            ->name('orders.done');
+
+    });
 });
-
-// Route CRUD menu
-Route::resource('menu', MenuController::class)
-    ->parameters(['menu' => 'menuItem']);
-
-// Route tambahan untuk fitur menu
-Route::get('menu/{menuItem}/quick-edit', [MenuController::class, 'editQuick'])
-    ->name('menu.quick-edit');
-
-Route::put('menu/{menuItem}/quick-update', [MenuController::class, 'updateQuick'])
-    ->name('menu.quick-update');
-
-Route::post('menu/import/preview', [MenuController::class, 'importPreview'])
-    ->name('menu.import.preview');
-
-Route::post('menu/import/store', [MenuController::class, 'importStore'])
-    ->name('menu.import.store');
-
-Route::post('menu/{menuItem}/discount', [MenuController::class, 'storeDiscount'])
-    ->name('menu.discount.store');
-
-Route::delete('menu/{menuItem}/discount/{discount}', [MenuController::class, 'destroyDiscount'])
-    ->name('menu.discount.destroy');
-
-// Route CRUD kategori
-Route::resource('categories', CategoryController::class);
-
-// Route CRUD meja makan
-Route::resource('tables', DiningTableController::class);
-
-// Route untuk halaman guest/customer
-require __DIR__ . '/members/gilang.php';
-require __DIR__ . '/members/fatur.php';

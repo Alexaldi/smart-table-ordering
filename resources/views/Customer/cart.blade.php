@@ -180,18 +180,79 @@
                     </div>
 
 
-                    <input type="text" name="customer_name" class="form-control mb-2" placeholder="Nama kamu" required>
-                    <input type="tel" name="customer_phone" class="form-control mb-2" placeholder="Nomor telepon" required>
-                    <input type="email" name="customer_email" class="form-control mb-2" placeholder="Email untuk receipt" required>
+                    <input type="hidden" name="payment_choice" id="paymentChoice">
                     <textarea name="notes" class="form-control order-notes" rows="2" placeholder="Catatan pesanan, contoh: antar kalau semua sudah siap"></textarea>
 
                     <button class="btn-checkout" type="submit" id="checkoutButton">
-                        <span id="checkoutButtonText">Pesan Sekarang</span>
+                        <span id="checkoutButtonText">Order Now</span>
                     </button>
                 </form>
             </div>
         </div>
     @endif
+
+    <div class="modal fade" id="paymentChoiceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Choose Payment Method</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body pt-0">
+                    <p class="text-muted small mb-3">Select how you would like to complete your order.</p>
+
+                    <button type="button" class="btn btn-dark w-100 mb-2" id="payCashButton">
+                        Pay at Cashier
+                    </button>
+
+                    <button type="button" class="btn w-100" style="background-color: #d4a574; color: white;" id="payCashlessButton">
+                        Pay Online
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="cashlessDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Payment Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body pt-0">
+                    <p class="text-muted small mb-3">Enter your contact details to receive the payment receipt.</p>
+
+                    <input type="text" name="customer_name" form="checkoutForm" class="form-control mb-2" placeholder="Full Name">
+                    <input type="tel" name="customer_phone" form="checkoutForm" class="form-control mb-2" placeholder="Phone Number">
+                    <input type="email" name="customer_email" form="checkoutForm" class="form-control mb-3" placeholder="Email Address">
+
+                    <button type="button" class="btn btn w-100" style="background-color: #d4a574; color: white;" id="continueCashlessButton">
+                        Continue to Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="cashInstructionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0">
+                <div class="modal-body text-center p-4">
+                    <i class="bi bi-cash-coin fs-1 text-success"></i>
+                    <h5 class="fw-bold mt-3">Please Complete Your Payment</h5>
+                    <p class="text-muted small mb-3">
+                        Please proceed to the cashier and complete your payment. Your order will be prepared once the payment is confirmed.
+                    </p>
+
+                    <div class="fw-bold mb-2" id="cashOrderCode"></div>
+                    <div class="text-muted small">Waiting for cashier confirmation...</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ $clientKey }}"></script>
@@ -199,13 +260,38 @@
         const checkoutForm = document.getElementById('checkoutForm');
 
         if (checkoutForm) {
-            checkoutForm.addEventListener('submit', async function (event) {
-                event.preventDefault();
+            const button = document.getElementById('checkoutButton');
+            const buttonText = document.getElementById('checkoutButtonText');
+            const paymentChoice = document.getElementById('paymentChoice');
 
-                const button = document.getElementById('checkoutButton');
-                const buttonText = document.getElementById('checkoutButtonText');
+            const paymentChoiceModal = new bootstrap.Modal(document.getElementById('paymentChoiceModal'));
+            const cashlessDetailModal = new bootstrap.Modal(document.getElementById('cashlessDetailModal'));
+            const cashInstructionModal = new bootstrap.Modal(document.getElementById('cashInstructionModal'));
+
+            checkoutForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                paymentChoiceModal.show();
+            });
+
+            document.getElementById('payCashButton').addEventListener('click', function () {
+                paymentChoice.value = 'cash';
+                paymentChoiceModal.hide();
+                submitCheckout();
+            });
+
+            document.getElementById('payCashlessButton').addEventListener('click', function () {
+                paymentChoice.value = 'cashless';
+                paymentChoiceModal.hide();
+                cashlessDetailModal.show();
+            });
+
+            document.getElementById('continueCashlessButton').addEventListener('click', function () {
+                submitCheckout();
+            });
+
+            async function submitCheckout() {
                 button.disabled = true;
-                buttonText.textContent = 'Memproses...';
+                buttonText.textContent = 'Processing...';
 
                 const formData = new FormData(checkoutForm);
 
@@ -222,37 +308,60 @@
                     const data = await response.json();
 
                     if (!response.ok) {
-                        alert(data.message || 'Checkout gagal, silakan coba lagi.');
+                        alert(data.message || 'Checkout failed. Please try again.');
                         button.disabled = false;
-                        buttonText.textContent = 'Pesan Sekarang';
+                        buttonText.textContent = 'Order Now';
+                        return;
+                    }
+
+                    if (data.payment_choice === 'cash') {
+                        document.getElementById('cashOrderCode').textContent = data.order_code;
+                        cashInstructionModal.show();
+
+                        const checker = setInterval(async function () {
+                            const response = await fetch(data.status_url, {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                }
+                            });
+
+                            const statusData = await response.json();
+
+                            if (statusData.is_paid) {
+                                clearInterval(checker);
+                                window.location.href = data.summary_url;
+                            }
+                        }, 3000);
+
                         return;
                     }
 
                     snap.pay(data.snap_token, {
-                        onSuccess: function (result) {
+                        onSuccess: function () {
                             window.location.href = data.summary_url;
                         },
-                        onPending: function (result) {
-                            alert('Pembayaran belum selesai. Silakan selesaikan pembayaran terlebih dahulu.');
+                        onPending: function () {
+                            alert('Your payment is still pending. Please complete the payment first.');
                             button.disabled = false;
-                            buttonText.textContent = 'Pesan Sekarang';
+                            buttonText.textContent = 'Order Now';
                         },
-                        onError: function (result) {
-                            alert('Pembayaran gagal, silakan coba lagi.');
+                        onError: function () {
+                            alert('Payment failed. Please try again.');
                             button.disabled = false;
-                            buttonText.textContent = 'Pesan Sekarang';
+                            buttonText.textContent = 'Order Now';
                         },
                         onClose: function () {
                             button.disabled = false;
-                            buttonText.textContent = 'Pesan Sekarang';
+                            buttonText.textContent = 'Order Now';
                         }
                     });
                 } catch (error) {
-                    alert('Terjadi kesalahan koneksi, silakan coba lagi.');
+                    alert('Connection error. Please try again.');
                     button.disabled = false;
-                    buttonText.textContent = 'Pesan Sekarang';
+                    buttonText.textContent = 'Order Now';
                 }
-            });
+            }
         }
     </script>
 </body>

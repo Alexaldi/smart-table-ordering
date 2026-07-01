@@ -52,14 +52,6 @@
             </a>
         </div>
 
-        @if(session('success'))
-            <div class="sto-alert success">{{ session('success') }}</div>
-        @endif
-
-        @if(session('error'))
-            <div class="sto-alert error">{{ session('error') }}</div>
-        @endif
-
         <div class="sto-card">
             <div class="sto-card-toolbar">
                 <form method="GET" action="{{ route('shifts.index') }}" class="sto-search">

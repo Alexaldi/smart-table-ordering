@@ -70,6 +70,8 @@
                     <select id="role" name="role" class="sto-control @error('role') is-invalid @enderror">
                         <option value="admin" @selected(old('role', $user->role) === 'admin')>Admin</option>
                         <option value="kasir" @selected(old('role', $user->role) === 'kasir')>Kasir</option>
+                        <option value="dapur"  @selected(old('role', $user->role) === 'dapur')>Dapur</option>
+                        <option value="owner"  @selected(old('role', $user->role) === 'owner')>Owner</option>
                     </select>
                     @error('role') <div class="sto-error">{{ $message }}</div> @enderror
                 </div>

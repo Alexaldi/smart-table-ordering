@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['order_item_id', 'status', 'confirmed_by', 'queued_at', 'done_at'])]
+#[Fillable(['order_item_id','reject_item_id','quantity','queue_type', 'status', 'confirmed_by', 'queued_at', 'done_at'])]
 class KitchenQueue extends Model
 {
     use HasFactory;
@@ -22,6 +22,11 @@ class KitchenQueue extends Model
     public function orderItem(): BelongsTo
     {
         return $this->belongsTo(OrderItem::class);
+    }
+
+    public function rejectItem(): BelongsTo
+    {
+        return $this->belongsTo(RejectItem::class);
     }
 
     public function confirmedBy(): BelongsTo

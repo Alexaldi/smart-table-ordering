@@ -44,7 +44,7 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'email' => ['nullable', 'email', 'max:150', 'unique:users,email'],
             'password' => ['required', 'confirmed', 'min:6'],
-            'role' => ['required', Rule::in(['admin', 'kasir'])],
+            'role' => ['required', Rule::in(['admin', 'kasir', 'dapur', 'owner'])],
             'shift_id' => ['nullable', 'exists:shifts,id'],
             'is_active' => ['nullable', 'boolean'],
         ]);

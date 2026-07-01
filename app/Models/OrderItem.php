@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['order_id', 'menu_item_id', 'discount_id', 'quantity', 'unit_price', 'discount_amount', 'subtotal', 'notes', 'status'])]
 class OrderItem extends Model
@@ -39,13 +40,13 @@ class OrderItem extends Model
         return $this->belongsTo(Discount::class);
     }
 
-    public function rejectItem(): HasOne
+    public function rejectItems(): HasMany
     {
-        return $this->hasOne(RejectItem::class);
+        return $this->hasMany(RejectItem::class);
     }
 
-    public function kitchenQueue(): HasOne
+    public function kitchenQueues(): HasMany
     {
-        return $this->hasOne(KitchenQueue::class);
+        return $this->hasMany(KitchenQueue::class);
     }
 }

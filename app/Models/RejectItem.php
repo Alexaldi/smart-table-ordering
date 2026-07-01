@@ -9,12 +9,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['order_item_id', 'reported_by', 'reason', 'action', 'cost_impact'])]
+#[Fillable(['order_item_id', 'quantity', 'reported_by', 'reason', 'action', 'cost_impact'])]
 class RejectItem extends Model
 {
     use HasFactory;
 
     protected $casts = [
+        'quantity' => 'integer',
         'cost_impact' => 'decimal:2',
     ];
 

@@ -32,10 +32,10 @@
             </a>
             <ul class="slide-menu" style="{{ $isUsersSection ? 'display: block;' : '' }}">
                 <li>
-                    <a href="{{ route('users.index') }}" class="slide-item {{ $isUsersActive ? 'active' : '' }}">User Management</a>
+                    <a href="{{ route('shifts.index') }}" class="slide-item {{ $isShiftsActive ? 'active' : '' }}">Shift Management</a>
                 </li>
                 <li>
-                    <a href="{{ route('shifts.index') }}" class="slide-item {{ $isShiftsActive ? 'active' : '' }}">Shift Management</a>
+                    <a href="{{ route('users.index') }}" class="slide-item {{ $isUsersActive ? 'active' : '' }}">User Management</a>
                 </li>
             </ul>
         </li>

@@ -44,9 +44,10 @@ class LoginController extends Controller
 
         $user->loadMissing('shift');
 
-        if ($user->role === 'kasir' && $user->shift && ! $user->shift->isActiveAt()) {
-            Auth::logout();
+        $shiftRoles = ['kasir', 'dapur'];
 
+        if (in_array($user->role, $shiftRoles) && $user->shift && ! $user->shift->isActiveAt()) {
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
@@ -66,6 +67,14 @@ class LoginController extends Controller
         if ($user->role === 'kasir') {
             return redirect()->route('kasir.dashboard');
         }
+
+        if ($user->role === 'dapur') {
+            return redirect()->route('dapur.dashboard');
+        }
+
+        // if ($user->role === 'owner') {
+        //     return redirect()->route('owner.dashboard');
+        // }
 
         Auth::logout();
 

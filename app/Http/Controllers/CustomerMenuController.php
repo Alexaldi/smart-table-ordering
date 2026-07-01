@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Services\MidtransService;
 use App\Models\StockLog;
+use App\Models\KitchenQueue;
 
 class CustomerMenuController extends Controller
 {
@@ -315,9 +316,10 @@ class CustomerMenuController extends Controller
         $table = $this->getTableByToken($token);
 
         $validated = $request->validate([
-            'customer_name' => ['required', 'string', 'max:100'],
-            'customer_phone' => ['required', 'string', 'max:30'],
-            'customer_email' => ['required', 'email', 'max:150'],
+            'payment_choice' => ['required', 'in:cash,cashless'],
+            'customer_name' => ['required_if:payment_choice,cashless', 'nullable', 'string', 'max:100'],
+            'customer_phone' => ['required_if:payment_choice,cashless', 'nullable', 'string', 'max:30'],
+            'customer_email' => ['required_if:payment_choice,cashless', 'nullable', 'email', 'max:150'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -373,11 +375,11 @@ class CustomerMenuController extends Controller
                     'order_code' => 'ORD-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4)),
                     'table_id' => $table->id,
                     'session_token' => session()->getId(),
-                    'customer_name' => $validated['customer_name'],
-                    'customer_phone' => $validated['customer_phone'],
-                    'customer_email' => $validated['customer_email'],
+                    'customer_name' => $validated['customer_name'] ?? null,
+                    'customer_phone' => $validated['customer_phone'] ?? null,
+                    'customer_email' => $validated['customer_email'] ?? null,
                     'status' => 'pending_payment',
-                    'payment_method' => null,
+                    'payment_method' => $validated['payment_choice'] === 'cash' ? 'cash' : null,
                     'payment_status' => 'unpaid',
                     'subtotal' => $subtotal,
                     'discount_total' => $discountTotal,
@@ -389,7 +391,7 @@ class CustomerMenuController extends Controller
                     $menuItem = $item['menu_item'];
                     $pricing = $item['pricing'];
 
-                    OrderItem::create([
+                    $orderItem = OrderItem::create([
                         'order_id' => $order->id,
                         'menu_item_id' => $menuItem->id,
                         'discount_id' => $pricing['discount_id'],
@@ -399,6 +401,13 @@ class CustomerMenuController extends Controller
                         'subtotal' => $item['subtotal'],
                         'notes' => $item['notes'] ?? null,
                         'status' => 'pending',
+                    ]);
+
+                    KitchenQueue::create([
+                        'order_item_id' => $orderItem->id,
+                        'status' => 'queued',
+                        'quantity'      => $item['quantity'],
+                        'queued_at' => now(),
                     ]);
 
                     $stockBefore = $menuItem->stock;
@@ -436,6 +445,22 @@ class CustomerMenuController extends Controller
             return back()->with('error', 'Checkout gagal: ' . $exception->getMessage());
         }
 
+        // Jika pembayaran tunai, langsung kembalikan response JSON dengan order_code dan summary_url
+        if ($validated['payment_choice'] === 'cash') {
+            return response()->json([
+                'payment_choice' => 'cash',
+                'order_code' => $order->order_code,
+                'status_url' => route('customer-menu.order-status', [
+                    'token' => $token,
+                    'order' => $order->order_code,
+                ]),
+                'summary_url' => route('customer-menu.order-summary', [
+                    'token' => $token,
+                    'order' => $order->order_code,
+                ]),
+            ]);
+        }
+
         try {
             $order->load('orderItems.menuItem');
             $snapToken = (new MidtransService())->getSnapToken($order);
@@ -466,6 +491,86 @@ class CustomerMenuController extends Controller
 
         $order->load('orderItems.menuItem', 'table');
 
-        return view('customer.order-summary', compact('order', 'table', 'token'));
+        // Ambil semua Order Item milik order ini
+        $itemIds = $order->orderItems->pluck('id');
+
+        // Cari queue yang sedang diproses (hanya order ini)
+        $preparingQueue = KitchenQueue::whereIn('order_item_id', $itemIds)
+            ->where('queue_type', 'new_order')
+            ->where('status', 'preparing')
+            ->orderBy('updated_at')
+            ->first();
+
+        $countdownEnd = null;
+        $estimatedMinutes = 0;
+
+        if ($preparingQueue) {
+
+            // Ambil estimasi menu paling lama
+            $estimatedMinutes = $order->orderItems->max(function ($item) {
+                return $item->menuItem->estimated_minutes ?? 0;
+            });
+
+            // Hitung waktu selesai
+            $countdownEnd = $preparingQueue->updated_at
+                ->copy()
+                ->addMinutes($estimatedMinutes);
+        }
+
+        return view(
+            'customer.order-summary',
+            compact(
+                'order',
+                'table',
+                'token',
+                'countdownEnd',
+                'estimatedMinutes'
+            )
+        );
+    }
+    
+    public function orderStatus(string $token, Order $order)
+    {
+        $table = $this->getTableByToken($token);
+
+        abort_if($order->table_id !== $table->id, 404);
+
+        return response()->json([
+            'order_code' => $order->order_code,
+            'status' => $order->status,
+            'payment_status' => $order->payment_status,
+            'is_paid' => $order->payment_status === 'paid',
+        ]);
+    }
+
+    public function countdownStatus(string $token, Order $order)
+    {
+        $table = $this->getTableByToken($token);
+        abort_if($order->table_id !== $table->id, 404);
+
+        $itemIds = $order->orderItems->pluck('id');
+
+        $preparingQueue = KitchenQueue::whereIn('order_item_id', $itemIds)
+            ->where('queue_type', 'new_order')
+            ->where('status', 'preparing')
+            ->orderBy('updated_at')
+            ->first();
+
+        $countdownEnd = null;
+
+        if ($preparingQueue) {
+            $estimatedMinutes = $order->orderItems->max(function ($item) {
+                return $item->menuItem->estimated_minutes ?? 0;
+            });
+
+            $countdownEnd = $preparingQueue->updated_at
+                ->copy()
+                ->addMinutes($estimatedMinutes);
+        }
+
+        return response()->json([
+            'has_queue'     => (bool) $preparingQueue,
+            'countdown_end' => $countdownEnd?->toIso8601String(),
+        ]);
     }
 }
