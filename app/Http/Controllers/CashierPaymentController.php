@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use App\Models\RejectItem;
 use Illuminate\Validation\ValidationException;
 use App\Models\KitchenQueue;
+use App\Services\NotificationService;
 
 class CashierPaymentController extends Controller
 {
@@ -51,6 +52,7 @@ class CashierPaymentController extends Controller
         ]);
 
         $changeAmount = $validated['amount_paid'] - $order->grand_total;
+        $wasPaidBefore = $order->payment_status === 'paid';
 
         DB::transaction(function () use ($order, $validated, $changeAmount) {
             $order->update([
@@ -70,6 +72,15 @@ class CashierPaymentController extends Controller
                 ]
             );
         });
+
+        if (! $wasPaidBefore) {
+            app(NotificationService::class)->notifyRole(
+                'dapur',
+                'order_paid_cash',
+                $order->id,
+                "Order {$order->order_code} sudah dibayar cash dan siap dimasak."
+            );
+        }
 
         return response()->json([
             'message' => 'Cash payment completed successfully.',
@@ -134,6 +145,14 @@ class CashierPaymentController extends Controller
                 ]);
             }
         });
+
+        $message = "Remake item untuk order {$order->order_code} masuk dari kasir.";
+        app(NotificationService::class)->notifyRoles(
+            ['dapur', 'admin', 'owner'],
+            'order_item_rejected',
+            $order->id,
+            $message
+        );
 
         return response()->json([
             'message' => 'Selected items have been rejected and sent back to the kitchen.',

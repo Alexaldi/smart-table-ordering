@@ -52,6 +52,8 @@
                         @endif
                     </div>
 
+                    @include('components.notification-bell')
+
                     <form method="POST" action="{{ route('logout') }}" class="mb-0" id="kasirLogoutForm">
                         @csrf
                         <button type="submit" class="ks-logout">
@@ -279,7 +281,7 @@
         </div>
     </main>
 
-    @if($shiftEndsAt)
+@if($shiftEndsAt)
         <script>
             (function () {
                 const logoutForm = document.getElementById('kasirLogoutForm');
@@ -730,3 +732,4 @@
     @endif
 </body>
 </html>
+

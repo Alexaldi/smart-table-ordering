@@ -11,6 +11,7 @@ use Midtrans\Config;
 use Midtrans\Notification;
 use App\Mail\OrderReceiptMail;
 use Illuminate\Support\Facades\Mail;
+use App\Services\NotificationService;
 
 class MidtransNotificationController extends Controller
 {
@@ -37,6 +38,8 @@ class MidtransNotificationController extends Controller
 
         if ($transactionStatus == 'capture' || $transactionStatus == 'settlement') {
             if ($fraudStatus == 'accept' || $fraudStatus === null) {
+                $wasPaidBefore = $order->payment_status === 'paid';
+
                 $order->update([
                     'status' => 'paid',
                     'payment_status' => 'paid',
@@ -58,6 +61,15 @@ class MidtransNotificationController extends Controller
                     $order->load('orderItems.menuItem', 'table');
 
                     Mail::to($order->customer_email)->send(new OrderReceiptMail($order));
+                }
+
+                if (! $wasPaidBefore) {
+                    app(NotificationService::class)->notifyRole(
+                        'dapur',
+                        'order_paid_midtrans',
+                        $order->id,
+                        "Order {$order->order_code} pembayaran online berhasil dan siap dimasak."
+                    );
                 }
             }
         } elseif ($transactionStatus == 'pending') {

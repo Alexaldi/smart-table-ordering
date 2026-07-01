@@ -13,8 +13,9 @@
         body.kitchen-detail { min-height: 100vh; background: #f4f7fb; color: #111827; }
         .kt-shell { min-height: 100vh; padding: 24px; }
         .kt-page { width: min(100%, 760px); margin: 0 auto; }
+        .kt-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 
-        .kt-back { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; font-size: 13px; font-weight: 700; text-decoration: none; margin-bottom: 16px; }
+        .kt-back { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; font-size: 13px; font-weight: 700; text-decoration: none; }
         .kt-back:hover { color: #111827; }
 
         .kt-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 4px 12px rgba(15,23,42,.04); overflow: hidden; }
@@ -72,7 +73,10 @@
 <body class="kitchen-detail">
     <main class="kt-shell">
         <div class="kt-page">
-            <a href="{{ route('dapur.dashboard') }}" class="kt-back">&larr; Kembali ke Dashboard</a>
+            <div class="kt-topbar">
+                <a href="{{ route('dapur.dashboard') }}" class="kt-back">&larr; Kembali ke Dashboard</a>
+                @include('components.notification-bell')
+            </div>
 
             <section class="kt-panel">
                 <div class="kt-detail-header">

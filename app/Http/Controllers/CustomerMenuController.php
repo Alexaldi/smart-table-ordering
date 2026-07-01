@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Services\MidtransService;
+use App\Services\NotificationService;
 use App\Models\StockLog;
 use App\Models\KitchenQueue;
 
@@ -447,6 +448,13 @@ class CustomerMenuController extends Controller
 
         // Jika pembayaran tunai, langsung kembalikan response JSON dengan order_code dan summary_url
         if ($validated['payment_choice'] === 'cash') {
+            app(NotificationService::class)->notifyRole(
+                'kasir',
+                'cash_order_created',
+                $order->id,
+                "Order {$order->order_code} dari Meja {$table->table_number} menunggu pembayaran cash."
+            );
+
             return response()->json([
                 'payment_choice' => 'cash',
                 'order_code' => $order->order_code,

@@ -83,7 +83,7 @@ class UserController extends Controller
                 Rule::unique('users', 'email')->ignore($user->id),
             ],
             'password' => ['nullable', 'confirmed', 'min:6'],
-            'role' => ['required', Rule::in(['admin', 'kasir'])],
+            'role' => ['required', Rule::in(['admin', 'kasir', 'dapur', 'owner'])],
             'shift_id' => ['nullable', 'exists:shifts,id'],
             'is_active' => ['nullable', 'boolean'],
         ]);

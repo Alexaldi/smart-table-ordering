@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class KitchenController extends Controller
 {
@@ -128,6 +129,14 @@ class KitchenController extends Controller
             }
         });
 
+        $label = $type === 'remake' ? 'Remake order' : 'Order';
+        app(NotificationService::class)->notifyRole(
+            'kasir',
+            'order_preparing',
+            $order->id,
+            "{$label} {$order->order_code} sedang diproses dapur."
+        );
+
         return response()->json([
             'message'  => 'Order sedang diproses.',
             'redirect' => route('dapur.orders.show', $order->id),
@@ -169,6 +178,14 @@ class KitchenController extends Controller
                 $order->update(['status' => 'ready']);
             }
         });
+
+        $label = $type === 'remake' ? 'Remake order' : 'Order';
+        app(NotificationService::class)->notifyRole(
+            'kasir',
+            'order_ready',
+            $order->id,
+            "{$label} {$order->order_code} selesai dimasak dan siap disajikan."
+        );
 
         return response()->json([
             'message'  => 'Order selesai dimasak.',

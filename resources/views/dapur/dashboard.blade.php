@@ -119,6 +119,9 @@
                             <span>No shift assigned</span>
                         @endif
                     </div>
+
+                    @include('components.notification-bell')
+
                     <form method="POST" action="{{ route('logout') }}" class="mb-0">
                         @csrf
                         <button type="submit" class="kt-logout"><i class="fe fe-log-out"></i> Logout</button>

@@ -15,6 +15,7 @@
                 <img src="{{ asset('assets/images/brand/logo-3.png') }}" class="header-brand-img light-logo1" alt="logo">
             </a>
             <div class="d-flex order-lg-2 ms-auto header-right-icons">
+                @include('components.notification-bell')
                 
                 <button class="navbar-toggler navresponsive-toggler d-md-none ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent-4" aria-controls="navbarSupportedContent-4" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon fe fe-more-vertical text-dark"></span>

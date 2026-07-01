@@ -18,7 +18,7 @@ class EnsureKasirShiftIsActive
     {
         $user = Auth::user();
 
-        if (! $user || $user->role !== 'kasir') {
+        if (! $user || ! in_array($user->role, ['kasir', 'dapur'], true)) {
             return $next($request);
         }
 

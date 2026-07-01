@@ -72,9 +72,9 @@ class LoginController extends Controller
             return redirect()->route('dapur.dashboard');
         }
 
-        // if ($user->role === 'owner') {
-        //     return redirect()->route('owner.dashboard');
-        // }
+        if ($user->role === 'owner') {
+            return redirect()->route('owner.dashboard');
+        }
 
         Auth::logout();
 

@@ -28,6 +28,14 @@ class RedirectByRole
             return redirect()->route('kasir.dashboard');
         }
 
+        if (Auth::user()->role === 'dapur') {
+            return redirect()->route('dapur.dashboard');
+        }
+
+        if (Auth::user()->role === 'owner') {
+            return redirect()->route('owner.dashboard');
+        }
+
         abort(403, 'Role tidak dikenali.');
     }
 }

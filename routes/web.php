@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\CashierPaymentController;
 use App\Http\Controllers\KitchenController;
+use App\Http\Controllers\NotificationController;
 use App\Models\Category;
 use App\Models\DiningTable;
 use App\Models\MenuItem;
@@ -48,6 +49,22 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])
         ->name('logout');
+
+    Route::prefix('notifications')
+        ->name('notifications.')
+        ->group(function () {
+            Route::get('/', [NotificationController::class, 'index'])
+                ->name('index');
+
+            Route::get('/unread-count', [NotificationController::class, 'unreadCount'])
+                ->name('unread-count');
+
+            Route::post('/read-all', [NotificationController::class, 'readAll'])
+                ->name('read-all');
+
+            Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])
+                ->name('read');
+        });
 
     /*
     |--------------------------------------------------------------------------
@@ -97,6 +114,22 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('shifts', ShiftController::class);
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Owner routes
+    |--------------------------------------------------------------------------
+    | Khusus user login dengan role owner.
+    */
+
+    Route::middleware('role:owner')
+        ->prefix('owner')
+        ->name('owner.')
+        ->group(function () {
+            Route::get('/dashboard', function () {
+                return view('owner.dashboard');
+            })->name('dashboard');
+        });
 
     /*
     |--------------------------------------------------------------------------
