@@ -145,6 +145,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [CashierPaymentController::class, 'index'])
                 ->name('dashboard');
 
+            Route::get('/dashboard/realtime', [CashierPaymentController::class, 'realtime'])
+                ->name('dashboard.realtime');
+
             Route::get('/orders/{order}/receipt', [CashierPaymentController::class, 'receipt'])
                 ->name('orders.receipt');
 
@@ -168,6 +171,9 @@ Route::middleware('auth')->group(function () {
     ->group(function () {
         Route::get('/dashboard', [KitchenController::class, 'index'])
             ->name('dashboard');
+
+        Route::get('/dashboard/realtime', [KitchenController::class, 'realtime'])
+            ->name('dashboard.realtime');
 
         Route::get('/orders/{order}', [KitchenController::class, 'show'])
             ->name('orders.show');

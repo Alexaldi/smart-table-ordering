@@ -42,15 +42,37 @@ class Shift extends Model
         $time ??= now();
 
         $end = $time->copy()->setTimeFromTimeString($this->end_time);
+
         $startSeconds = $this->secondsFromTime($this->start_time);
         $endSeconds = $this->secondsFromTime($this->end_time);
         $currentSeconds = $this->secondsFromTime($time->format('H:i:s'));
 
-        if ($endSeconds <= $startSeconds && $currentSeconds >= $startSeconds) {
-            return $end->addDay();
+        if ($endSeconds <= $startSeconds) {
+            if ($currentSeconds >= $startSeconds) {
+                return $end->addDay();
+            }
+
+            return $end;
         }
 
         return $end;
+    }
+
+    public function startDateTimeFrom(?Carbon $time = null): Carbon
+    {
+        $time ??= now();
+
+        $start = $time->copy()->setTimeFromTimeString($this->start_time);
+
+        $startSeconds = $this->secondsFromTime($this->start_time);
+        $endSeconds = $this->secondsFromTime($this->end_time);
+        $currentSeconds = $this->secondsFromTime($time->format('H:i:s'));
+
+        if ($endSeconds <= $startSeconds && $currentSeconds < $startSeconds) {
+            return $start->subDay();
+        }
+
+        return $start;
     }
 
     private function secondsFromTime(string $time): int

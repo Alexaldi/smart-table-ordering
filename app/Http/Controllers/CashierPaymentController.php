@@ -6,7 +6,6 @@ use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Carbon;
 use App\Models\RejectItem;
 use Illuminate\Validation\ValidationException;
 use App\Models\KitchenQueue;
@@ -14,16 +13,15 @@ use App\Services\NotificationService;
 
 class CashierPaymentController extends Controller
 {
-    public function index()
+
+    private function dashboardData(): array
     {
         $shift = auth()->user()->shift;
 
-        $shiftStart = Carbon::today()->setTimeFromTimeString($shift->start_time);
-        $shiftEnd = Carbon::today()->setTimeFromTimeString($shift->end_time);
+        $now = now();
 
-        if ($shiftEnd->lessThanOrEqualTo($shiftStart)) {
-            $shiftEnd->addDay();
-        }
+        $shiftStart = $shift->startDateTimeFrom($now);
+        $shiftEnd = $shift->endDateTimeFrom($now);
 
         $orders = Order::with([
                 'table',
@@ -42,7 +40,27 @@ class CashierPaymentController extends Controller
             'active_tables' => $orders->pluck('table_id')->filter()->unique()->count(),
         ];
 
-        return view('kasir.dashboard', compact('orders', 'stats'));
+        return compact('orders', 'stats');
+    }
+
+    public function realtime()
+    {
+        $data = $this->dashboardData();
+
+        return response()->json([
+            'stats_html' => view('kasir.partials.stats', [
+                'stats' => $data['stats'],
+            ])->render(),
+
+            'orders_html' => view('kasir.partials.orders', [
+                'orders' => $data['orders'],
+            ])->render(),
+        ]);
+    }
+
+    public function index()
+    {
+        return view('kasir.dashboard', $this->dashboardData());
     }
 
     public function payCash(Request $request, Order $order)

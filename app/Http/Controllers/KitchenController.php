@@ -5,15 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\KitchenQueue;
 use App\Models\Order;
 use App\Models\OrderItem;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
 
 class KitchenController extends Controller
 {
-    
-    public function index()
+    private function dashboardData(): array
     {
         $user = auth()->user();
         $user->loadMissing('shift');
@@ -21,11 +19,10 @@ class KitchenController extends Controller
 
         abort_unless($shift, 403, 'Belum ada shift aktif.');
 
-        $shiftStart = Carbon::today()->setTimeFromTimeString($shift->start_time);
-        $shiftEnd = Carbon::today()->setTimeFromTimeString($shift->end_time);
-        if ($shiftEnd->lessThanOrEqualTo($shiftStart)) {
-            $shiftEnd->addDay();
-        }
+        $now = now();
+
+        $shiftStart = $shift->startDateTimeFrom($now);
+        $shiftEnd = $shift->endDateTimeFrom($now);
 
         $queues = KitchenQueue::with([
                 'orderItem.order.table',
@@ -41,6 +38,7 @@ class KitchenController extends Controller
         $orders = $queues->groupBy(fn ($q) => $q->orderItem->order_id . '-' . $q->queue_type)
             ->map(function ($items) {
                 $order = $items->first()->orderItem->order;
+
                 return (object) [
                     'order'      => $order,
                     'queue_type' => $items->first()->queue_type,
@@ -59,7 +57,26 @@ class KitchenController extends Controller
             'total_items' => $queues->sum('quantity'),
         ];
 
-        return view('dapur.dashboard', compact('orders', 'stats'));
+        return compact('orders', 'stats');
+    }
+    public function index()
+    {
+       return view('dapur.dashboard', $this->dashboardData());
+    }
+
+    public function realtime()
+    {
+        $data = $this->dashboardData();
+
+        return response()->json([
+            'stats_html' => view('dapur.partials.stats', [
+                'stats' => $data['stats'],
+            ])->render(),
+
+            'orders_html' => view('dapur.partials.orders', [
+                'orders' => $data['orders'],
+            ])->render(),
+        ]);
     }
 
     public function show(Order $order)

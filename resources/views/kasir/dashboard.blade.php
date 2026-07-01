@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="ltr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
@@ -17,7 +18,9 @@
     @endphp
 
     <link rel="stylesheet" href="{{ asset('kasir/css/dashboard.css') }}">
+    @vite(['resources/js/app.js'])
 </head>
+
 <body class="kasir-dashboard">
     <main class="ks-shell">
         <div class="ks-page">
@@ -45,8 +48,9 @@
 
                     <div class="ks-shift-pill">
                         <i class="fe fe-clock"></i>
-                        @if($kasirShift)
-                            <span>{{ $kasirShift->name }} {{ substr($kasirShift->start_time, 0, 5) }} - {{ substr($kasirShift->end_time, 0, 5) }}</span>
+                        @if ($kasirShift)
+                            <span>{{ $kasirShift->name }} {{ substr($kasirShift->start_time, 0, 5) }} -
+                                {{ substr($kasirShift->end_time, 0, 5) }}</span>
                         @else
                             <span>Shift belum diatur</span>
                         @endif
@@ -64,42 +68,8 @@
                 </div>
             </header>
 
-            <section class="ks-stats" aria-label="Ringkasan kasir">
-                <article class="ks-stat-card">
-                    <div class="ks-stat-top">
-                        <div class="ks-stat-label">Pesanan Baru</div>
-                        <div class="ks-stat-icon"><i class="fe fe-bell"></i></div>
-                    </div>
-                    <div class="ks-stat-value">{{ $stats['new_orders'] ?? 0 }}</div>
-                    <div class="ks-stat-note">Menunggu diproses</div>
-                </article>
-
-                <article class="ks-stat-card">
-                    <div class="ks-stat-top">
-                        <div class="ks-stat-label">Pesanan Diproses</div>
-                        <div class="ks-stat-icon"><i class="fe fe-refresh-cw"></i></div>
-                    </div>
-                    <div class="ks-stat-value">{{ $stats['processing_orders'] ?? 0 }}</div>
-                    <div class="ks-stat-note">Sedang disiapkan</div>
-                </article>
-
-                <article class="ks-stat-card">
-                    <div class="ks-stat-top">
-                        <div class="ks-stat-label">Pembayaran</div>
-                        <div class="ks-stat-icon"><i class="fe fe-dollar-sign"></i></div>
-                    </div>
-                    <div class="ks-stat-value">{{ $stats['payments'] ?? 0 }}</div>
-                    <div class="ks-stat-note">Transaksi hari ini</div>
-                </article>
-
-                <article class="ks-stat-card">
-                    <div class="ks-stat-top">
-                        <div class="ks-stat-label">Meja Aktif</div>
-                        <div class="ks-stat-icon"><i class="fe fe-grid"></i></div>
-                    </div>
-                    <div class="ks-stat-value">{{ $stats['active_tables'] ?? 0 }}</div>
-                    <div class="ks-stat-note">Sedang digunakan</div>
-                </article>
+            <section class="ks-stats" id="kasirStats" aria-label="Ringkasan kasir">
+                @include('kasir.partials.stats', ['stats' => $stats])
             </section>
 
             <section class="ks-main-grid">
@@ -112,133 +82,8 @@
                         <span class="ks-panel-meta">Antrian hari ini</span>
                     </div>
 
-                    <div class="ks-orders">
-                        @forelse ($orders as $order)
-                            @php
-                                $isCash = $order->payment_method === 'cash';
-                                $isPaid = $order->payment_status === 'paid';
-                                $isCashWaiting = $isCash && !$isPaid;
-                                $paymentMethod = $order->payment_method ?? 'cashless';
-                                $paymentStatus = $order->payment_status;
-                            @endphp
-
-                            <div
-                                class="ks-order"
-                                data-payment-method="{{ $paymentMethod }}"
-                                data-payment-status="{{ $paymentStatus }}"
-                                data-order-status="{{ $order->status }}"
-                            >
-                                <div>
-                                    <div class="ks-order-code">
-                                        #{{ $order->order_code }} - Meja {{ $order->table->table_number ?? '-' }}
-                                    </div>
-
-                                    <div class="ks-order-info ks-status {{ $isPaid ? 'done' : 'wait' }}">
-                                        <span class="ks-status-dot"></span>
-                                        <span>
-                                            @if ($isCashWaiting)
-                                                Waiting for cash payment
-                                            @elseif ($isPaid)
-                                                Payment completed
-                                            @else
-                                                Waiting for online payment
-                                            @endif
-                                        </span>
-                                    </div>
-
-                                    <div class="ks-order-info">
-                                        {{ strtoupper($order->payment_method ?? 'cashless') }}
-                                        · Rp{{ number_format($order->grand_total, 0, ',', '.') }}
-                                        · {{ $order->created_at->format('H:i') }}
-                                    </div>
-                                </div>
-
-                                @php
-                                    $itemsForModal = $order->orderItems->map(function ($item) {
-                                        return [
-                                            'name' => $item->menuItem->name ?? 'Menu',
-                                            'quantity' => $item->quantity,
-                                            'notes' => $item->notes,
-                                            'subtotal' => (int) $item->subtotal,
-                                        ];
-                                    })->values();
-                                @endphp
-                                <div class="ks-actions-row">
-                                    <button
-                                        type="button"
-                                        class="ks-small-btn btn-order-detail"
-                                        data-order-code="{{ $order->order_code }}"
-                                        data-table="{{ $order->table->table_number ?? '-' }}"
-                                        data-payment-method="{{ strtoupper($order->payment_method ?? 'CASHLESS') }}"
-                                        data-payment-status="{{ strtoupper($order->payment_status) }}"
-                                        data-cashier="{{ $order->payment->processedBy->name ?? 'Online Payment' }}"
-                                        data-subtotal="{{ (int) $order->subtotal }}"
-                                        data-discount="{{ (int) $order->discount_total }}"
-                                        data-grand-total="{{ (int) $order->grand_total }}"
-                                        data-amount-paid="{{ (int) optional($order->payment)->amount_paid }}"
-                                        data-change-amount="{{ (int) optional($order->payment)->change_amount }}"
-                                        data-items='@json($itemsForModal)'
-                                    >
-                                        Detail
-                                    </button>
-
-                                    @php
-                                        $rejectItemsForModal = $order->orderItems->map(function ($item) {
-                                            return [
-                                                'id' => $item->id,
-                                                'name' => $item->menuItem->name ?? 'Menu',
-                                                'quantity' => (int) $item->quantity,
-                                                'notes' => $item->notes,
-                                                'subtotal' => (int) $item->subtotal,
-                                                'unit_price' => (int) round($item->subtotal / max(1, $item->quantity)),
-                                                'status' => $item->status,
-                                                'reject_count' => $item->rejectItems->count(),
-                                            ];
-                                        })->values();
-                                    @endphp
-                                    @if ($order->payment_status === 'paid')
-                                        <button
-                                            type="button"
-                                            class="ks-small-btn btn-reject-items" 
-                                            style="background:#dc2626;border-color:#dc2626;color:#ffffff;"
-                                            data-reject-url="{{ route('kasir.orders.reject-items', $order->id) }}"
-                                            data-order-code="{{ $order->order_code }}"
-                                            data-items='@json($rejectItemsForModal)'
-                                        >
-                                            Reject
-                                        </button>
-                                    @endif
-
-                                    @if ($isCashWaiting)
-                                        <button
-                                            type="button"
-                                            class="ks-small-btn primary btn-pay-cash"
-                                            data-pay-url="{{ route('kasir.orders.pay-cash', $order->id) }}"
-                                            data-total="{{ (int) $order->grand_total }}"
-                                            data-order-code="{{ $order->order_code }}"
-                                        >
-                                            Pay
-                                        </button>
-                                    @elseif ($isPaid)
-                                        <a href="{{ route('kasir.orders.receipt', $order->id) }}" target="_blank" class="ks-small-btn primary">
-                                            Print
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div id="filterEmptyState" class="ks-filter-empty text-center" style="display: none;">
-                                <div class="ks-filter-empty-icon">
-                                    <i class="fe fe-search"></i>
-                                </div>
-                                <strong>No orders found</strong>
-                                <p id="filterEmptyText">No orders match this filter.</p>
-                            </div>
-                        @empty
-                            <div class="p-4 text-center text-muted">
-                                No orders for this shift yet.
-                            </div>
-                        @endforelse
+                    <div class="ks-orders" id="kasirOrders" data-realtime-url="{{ route('kasir.dashboard.realtime') }}">
+                        @include('kasir.partials.orders', ['orders' => $orders])
                     </div>
                 </div>
 
@@ -280,10 +125,9 @@
             </section>
         </div>
     </main>
-
-@if($shiftEndsAt)
+    @if ($shiftEndsAt)
         <script>
-            (function () {
+            (function() {
                 const logoutForm = document.getElementById('kasirLogoutForm');
                 const shiftEndsAt = new Date(@json($shiftEndsAt->toIso8601String())).getTime();
                 const delay = shiftEndsAt - Date.now();
@@ -292,14 +136,14 @@
                     return;
                 }
 
-                window.setTimeout(function () {
+                window.setTimeout(function() {
                     if (window.Swal) {
                         Swal.fire({
                             icon: 'info',
                             title: 'Shift selesai',
                             text: 'Anda akan keluar otomatis dari halaman kasir.',
                             confirmButtonText: 'OK'
-                        }).then(function () {
+                        }).then(function() {
                             logoutForm.submit();
                         });
                     } else {
@@ -307,13 +151,84 @@
                     }
                 }, delay);
             })();
+        </script>
+    @endif
+    <script>
+        function rupiah(value) {
+            return 'Rp' + Number(value || 0).toLocaleString('id-ID');
+        }
 
-            function rupiah(value) {
-                return 'Rp' + Number(value || 0).toLocaleString('id-ID');
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function applyOrderFilter(filter, filterLabel) {
+            const emptyState = document.getElementById('filterEmptyState');
+            const emptyText = document.getElementById('filterEmptyText');
+
+            let visibleCount = 0;
+
+            document.querySelectorAll('.ks-order').forEach(function(orderCard) {
+                const paymentMethod = orderCard.dataset.paymentMethod;
+                const paymentStatus = orderCard.dataset.paymentStatus;
+
+                let shouldShow = true;
+
+                if (filter === 'need_payment') {
+                    shouldShow = paymentStatus === 'unpaid';
+                }
+
+                if (filter === 'cash') {
+                    shouldShow = paymentMethod === 'cash';
+                }
+
+                if (filter === 'cashless') {
+                    shouldShow = paymentMethod !== 'cash';
+                }
+
+                if (filter === 'paid') {
+                    shouldShow = paymentStatus === 'paid';
+                }
+
+                if (filter === 'all') {
+                    shouldShow = true;
+                }
+
+                orderCard.style.display = shouldShow ? '' : 'none';
+
+                if (shouldShow) {
+                    visibleCount++;
+                }
+            });
+
+            if (emptyState) {
+                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
             }
 
-            document.querySelectorAll('.btn-order-detail').forEach(function (button) {
-                button.addEventListener('click', function () {
+            if (emptyText) {
+                emptyText.textContent = `There are no orders for "${filterLabel}" in this shift.`;
+            }
+        }
+
+        function applyActiveOrderFilter() {
+            const activeButton = document.querySelector('.js-filter-order.active');
+            const filter = activeButton?.dataset.filter || 'all';
+            const filterLabel = activeButton?.querySelector('span')?.textContent || 'selected filter';
+
+            applyOrderFilter(filter, filterLabel);
+        }
+
+        function bindKasirDashboardActions() {
+            document.querySelectorAll('.btn-order-detail').forEach(function(button) {
+                if (button.dataset.bound === 'true') return;
+                button.dataset.bound = 'true';
+
+                button.addEventListener('click', function() {
                     const items = JSON.parse(this.dataset.items || '[]');
                     const subtotal = Number(this.dataset.subtotal || 0);
                     const discount = Number(this.dataset.discount || 0);
@@ -321,7 +236,7 @@
                     const amountPaid = Number(this.dataset.amountPaid || 0);
                     const changeAmount = Number(this.dataset.changeAmount || 0);
 
-                    const itemRows = items.map(function (item) {
+                    const itemRows = items.map(function(item) {
                         return `
                             <div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #eee;">
                                 <div>
@@ -365,10 +280,10 @@
                                     <div style="display:flex;justify-content:space-between;margin-bottom:6px;color:#dc2626;"><span>Discount</span><span>-${rupiah(discount)}</span></div>
                                     <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;padding-top:8px;border-top:1px solid #e5e7eb;margin-top:4px;"><span>Total</span><span>${rupiah(grandTotal)}</span></div>
                                     ${amountPaid ? `
-                                    <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #e5e7eb;">
-                                        <div style="display:flex;justify-content:space-between;color:#6b7280;margin-bottom:4px;"><span>Cash Received</span><span>${rupiah(amountPaid)}</span></div>
-                                        <div style="display:flex;justify-content:space-between;color:#6b7280;"><span>Change</span><span>${rupiah(changeAmount)}</span></div>
-                                    </div>` : ''}
+                                                                                                                                                                                                                                                                                                                                        <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #e5e7eb;">
+                                                                                                                                                                                                                                                                                                                                            <div style="display:flex;justify-content:space-between;color:#6b7280;margin-bottom:4px;"><span>Cash Received</span><span>${rupiah(amountPaid)}</span></div>
+                                                                                                                                                                                                                                                                                                                                            <div style="display:flex;justify-content:space-between;color:#6b7280;"><span>Change</span><span>${rupiah(changeAmount)}</span></div>
+                                                                                                                                                                                                                                                                                                                                        </div>` : ''}
                                 </div>
                             </div>
                         `,
@@ -378,8 +293,11 @@
                 });
             });
 
-            document.querySelectorAll('.btn-pay-cash').forEach(function (button) {
-                button.addEventListener('click', function () {
+            document.querySelectorAll('.btn-pay-cash').forEach(function(button) {
+                if (button.dataset.bound === 'true') return;
+                button.dataset.bound = 'true';
+
+                button.addEventListener('click', function() {
                     const payUrl = this.dataset.payUrl;
                     const total = Number(this.dataset.total);
                     const orderCode = this.dataset.orderCode;
@@ -402,27 +320,31 @@
                         showCancelButton: true,
                         confirmButtonText: 'Complete Payment',
                         cancelButtonText: 'Cancel',
-                        didOpen: function () {
+                        didOpen: function() {
                             const input = document.getElementById('cashReceived');
                             const changeText = document.getElementById('cashChange');
 
-                            input.addEventListener('input', function () {
+                            input.addEventListener('input', function() {
                                 const received = Number(input.value || 0);
                                 const change = Math.max(0, received - total);
                                 changeText.textContent = rupiah(change);
                             });
                         },
-                        preConfirm: function () {
-                            const received = Number(document.getElementById('cashReceived').value || 0);
+                        preConfirm: function() {
+                            const received = Number(document.getElementById('cashReceived')
+                                .value ||
+                                0);
 
                             if (received < total) {
-                                Swal.showValidationMessage('Cash received must be equal to or greater than the total.');
+                                Swal.showValidationMessage(
+                                    'Cash received must be equal to or greater than the total.'
+                                );
                                 return false;
                             }
 
                             return received;
                         }
-                    }).then(async function (result) {
+                    }).then(async function(result) {
                         if (!result.isConfirmed) {
                             return;
                         }
@@ -433,7 +355,8 @@
                                 headers: {
                                     'Accept': 'application/json',
                                     'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'X-CSRF-TOKEN': document.querySelector(
+                                        'meta[name="csrf-token"]').content,
                                 },
                                 body: JSON.stringify({
                                     amount_paid: result.value
@@ -451,8 +374,8 @@
                                 icon: 'success',
                                 title: 'Payment Completed',
                                 text: 'Change: ' + rupiah(data.change_amount),
-                            }).then(function () {
-                                window.location.reload();
+                            }).then(function() {
+                                refreshKasirDashboard();
                             });
                         } catch (error) {
                             Swal.fire('Failed', 'Connection error. Please try again.', 'error');
@@ -461,16 +384,11 @@
                 });
             });
 
-            function escapeHtml(value) {
-                return String(value ?? '')
-                    .replaceAll('&', '&amp;')
-                    .replaceAll('<', '&lt;')
-                    .replaceAll('>', '&gt;')
-                    .replaceAll('"', '&quot;')
-                    .replaceAll("'", '&#039;');
-            }
-            document.querySelectorAll('.btn-reject-items').forEach(function (button) {
-                button.addEventListener('click', function () {
+            document.querySelectorAll('.btn-reject-items').forEach(function(button) {
+                if (button.dataset.bound === 'true') return;
+                button.dataset.bound = 'true';
+
+                button.addEventListener('click', function() {
                     const rejectUrl = this.dataset.rejectUrl;
                     const orderCode = this.dataset.orderCode;
                     const items = JSON.parse(this.dataset.items || '[]');
@@ -485,23 +403,25 @@
                         return;
                     }
 
-                    const itemRows = items.map(function (item) {
+                    const itemRows = items.map(function(item) {
                         const itemId = Number(item.id);
                         const itemQty = Number(item.quantity || 1);
-                        const unitPrice = Number(item.unit_price || (Number(item.subtotal || 0) / Math.max(1, itemQty)));
+                        const unitPrice = Number(item.unit_price || (Number(item.subtotal || 0) /
+                            Math
+                            .max(1, itemQty)));
                         const itemName = escapeHtml(item.name || 'Menu');
                         const itemNotes = escapeHtml(item.notes || '');
                         const rejectCount = Number(item.reject_count || 0);
 
-                        const noteHtml = itemNotes
-                            ? `<div style="font-size:12px;color:#9ca3af;margin-top:3px;">📝 ${itemNotes}</div>`
-                            : '';
+                        const noteHtml = itemNotes ?
+                            `<div style="font-size:12px;color:#9ca3af;margin-top:3px;">📝 ${itemNotes}</div>` :
+                            '';
 
-                        const rejectBadge = rejectCount > 0
-                            ? `<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;padding:2px 8px;margin-top:4px;">
+                        const rejectBadge = rejectCount > 0 ?
+                            `<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;padding:2px 8px;margin-top:4px;">
                                 ⚠ Rejected ${rejectCount}x before
-                            </div>`
-                            : '';
+                            </div>` :
+                            '';
 
                         return `
                             <div style="padding:12px;border-bottom:1px solid #f3f4f6;transition:background .15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
@@ -585,55 +505,76 @@
                                 </div>
                             </div>
                         `,
-                        didOpen: function () {
-                            document.querySelectorAll('.reject-item-checkbox').forEach(function (checkbox) {
-                                checkbox.addEventListener('change', function () {
+                        didOpen: function() {
+                            document.querySelectorAll('.reject-item-checkbox').forEach(function(
+                                checkbox) {
+                                checkbox.addEventListener('change', function() {
                                     const itemId = this.value;
-                                    const qtyInput = document.querySelector(`.reject-qty-input[data-item-id="${itemId}"]`);
+                                    const qtyInput = document.querySelector(
+                                        `.reject-qty-input[data-item-id="${itemId}"]`
+                                    );
                                     if (!qtyInput) return;
                                     qtyInput.disabled = !this.checked;
-                                    qtyInput.style.background = this.checked ? '#fff' : '#f9fafb';
-                                    qtyInput.style.borderColor = this.checked ? '#2563eb' : '#d1d5db';
-                                    if (this.checked) { qtyInput.focus(); qtyInput.select(); }
-                                    else { qtyInput.value = 1; }
+                                    qtyInput.style.background = this.checked ?
+                                        '#fff' : '#f9fafb';
+                                    qtyInput.style.borderColor = this.checked ?
+                                        '#2563eb' : '#d1d5db';
+                                    if (this.checked) {
+                                        qtyInput.focus();
+                                        qtyInput.select();
+                                    } else {
+                                        qtyInput.value = 1;
+                                    }
                                 });
                             });
                         },
-                        preConfirm: function () {
+                        preConfirm: function() {
                             const selectedItems = [];
-                            const checkedBoxes = document.querySelectorAll('.reject-item-checkbox:checked');
+                            const checkedBoxes = document.querySelectorAll(
+                                '.reject-item-checkbox:checked');
                             const reason = document.getElementById('rejectReason').value.trim();
 
                             if (checkedBoxes.length === 0) {
-                                Swal.showValidationMessage('Select at least one item to reject.');
+                                Swal.showValidationMessage(
+                                    'Select at least one item to reject.');
                                 return false;
                             }
                             if (!reason) {
-                                Swal.showValidationMessage('Enter a reject reason before continuing.');
+                                Swal.showValidationMessage(
+                                    'Enter a reject reason before continuing.');
                                 return false;
                             }
 
                             for (const checkbox of checkedBoxes) {
                                 const itemId = Number(checkbox.value);
                                 const maxQty = Number(checkbox.dataset.max || 1);
-                                const qtyInput = document.querySelector(`.reject-qty-input[data-item-id="${itemId}"]`);
+                                const qtyInput = document.querySelector(
+                                    `.reject-qty-input[data-item-id="${itemId}"]`);
                                 const rejectQty = Number(qtyInput?.value || 0);
 
                                 if (!rejectQty || rejectQty < 1) {
-                                    Swal.showValidationMessage('Reject quantity must be at least 1.');
+                                    Swal.showValidationMessage(
+                                        'Reject quantity must be at least 1.');
                                     return false;
                                 }
                                 if (rejectQty > maxQty) {
-                                    Swal.showValidationMessage('Reject quantity exceeds ordered quantity.');
+                                    Swal.showValidationMessage(
+                                        'Reject quantity exceeds ordered quantity.');
                                     return false;
                                 }
 
-                                selectedItems.push({ order_item_id: itemId, quantity: rejectQty });
+                                selectedItems.push({
+                                    order_item_id: itemId,
+                                    quantity: rejectQty
+                                });
                             }
 
-                            return { items: selectedItems, reason: reason };
+                            return {
+                                items: selectedItems,
+                                reason: reason
+                            };
                         }
-                    }).then(async function (result) {
+                    }).then(async function(result) {
                         if (!result.isConfirmed) return;
 
                         try {
@@ -642,7 +583,8 @@
                                 headers: {
                                     'Accept': 'application/json',
                                     'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'X-CSRF-TOKEN': document.querySelector(
+                                        'meta[name="csrf-token"]').content,
                                 },
                                 body: JSON.stringify(result.value)
                             });
@@ -650,86 +592,114 @@
                             const data = await response.json();
 
                             if (!response.ok) {
-                                Swal.fire({ icon: 'error', title: 'Failed', text: data.message || 'Failed to reject items.', confirmButtonColor: '#2563eb' });
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Failed',
+                                    text: data.message || 'Failed to reject items.',
+                                    confirmButtonColor: '#2563eb'
+                                });
                                 return;
                             }
 
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Sent back to kitchen',
-                                text: data.message || 'Selected items have been sent back to the kitchen.',
+                                text: data.message ||
+                                    'Selected items have been sent back to the kitchen.',
                                 confirmButtonColor: '#2563eb'
-                            }).then(function () {
-                                window.location.reload();
+                            }).then(function() {
+                                refreshKasirDashboard();
                             });
 
                         } catch (error) {
-                            Swal.fire({ icon: 'error', title: 'Failed', text: 'Connection error. Please try again.', confirmButtonColor: '#2563eb' });
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Failed',
+                                text: 'Connection error. Please try again.',
+                                confirmButtonColor: '#2563eb'
+                            });
                         }
                     });
                 });
             });
 
-            document.querySelectorAll('.js-filter-order').forEach(function (button) {
-                button.addEventListener('click', function () {
+            document.querySelectorAll('.js-filter-order').forEach(function(button) {
+                if (button.dataset.bound === 'true') return;
+                button.dataset.bound = 'true';
+
+                button.addEventListener('click', function() {
                     const filter = this.dataset.filter;
                     const filterLabel = this.querySelector('span')?.textContent || 'selected filter';
 
-                    const emptyState = document.getElementById('filterEmptyState');
-                    const emptyText = document.getElementById('filterEmptyText');
-
-                    document.querySelectorAll('.js-filter-order').forEach(function (btn) {
+                    document.querySelectorAll('.js-filter-order').forEach(function(btn) {
                         btn.classList.remove('active');
                     });
 
                     this.classList.add('active');
 
-                    let visibleCount = 0;
-
-                    document.querySelectorAll('.ks-order').forEach(function (orderCard) {
-                        const paymentMethod = orderCard.dataset.paymentMethod;
-                        const paymentStatus = orderCard.dataset.paymentStatus;
-
-                        let shouldShow = true;
-
-                        if (filter === 'need_payment') {
-                            shouldShow = paymentStatus === 'unpaid';
-                        }
-
-                        if (filter === 'cash') {
-                            shouldShow = paymentMethod === 'cash';
-                        }
-
-                        if (filter === 'cashless') {
-                            shouldShow = paymentMethod !== 'cash';
-                        }
-
-                        if (filter === 'paid') {
-                            shouldShow = paymentStatus === 'paid';
-                        }
-
-                        if (filter === 'all') {
-                            shouldShow = true;
-                        }
-
-                        orderCard.style.display = shouldShow ? '' : 'none';
-
-                        if (shouldShow) {
-                            visibleCount++;
-                        }
-                    });
-
-                    if (emptyState) {
-                        emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
-                    }
-
-                    if (emptyText) {
-                        emptyText.textContent = `There are no orders for "${filterLabel}" in this shift.`;
-                    }
+                    applyOrderFilter(filter, filterLabel);
                 });
             });
-        </script>
-    @endif
-</body>
-</html>
 
+            applyActiveOrderFilter();
+        }
+
+        bindKasirDashboardActions();
+    </script>
+    <script>
+        async function refreshKasirDashboard() {
+            const ordersWrapper = document.getElementById('kasirOrders');
+            const statsWrapper = document.getElementById('kasirStats');
+
+            if (!ordersWrapper || !statsWrapper) {
+                return;
+            }
+
+            const url = ordersWrapper.dataset.realtimeUrl;
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+
+                statsWrapper.innerHTML = data.stats_html;
+                ordersWrapper.innerHTML = data.orders_html;
+
+                if (typeof bindKasirDashboardActions === 'function') {
+                    bindKasirDashboardActions();
+                }
+                if (typeof applyActiveOrderFilter === 'function') {
+                    applyActiveOrderFilter();
+                }
+            } catch (error) {
+                console.error('Failed to refresh cashier dashboard:', error);
+            }
+        }
+
+        window.addEventListener('sto:notification-created', function(event) {
+            const notification = event.detail || {};
+
+            const refreshTypes = [
+                'cash_order_created',
+                'order_preparing',
+                'order_ready'
+            ];
+
+            if (!refreshTypes.includes(notification.type)) {
+                return;
+            }
+
+            refreshKasirDashboard();
+        });
+    </script>
+</body>
+
+</html>

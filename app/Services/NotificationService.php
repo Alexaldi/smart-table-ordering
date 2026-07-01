@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\NotificationCreated;
 use App\Models\Notification;
 use InvalidArgumentException;
 
@@ -15,13 +16,17 @@ class NotificationService
             throw new InvalidArgumentException("Role {$role} tidak valid untuk notifikasi.");
         }
 
-        return Notification::create([
+        $notification = Notification::create([
             'target_role' => $role,
             'type' => $type,
             'reference_id' => $referenceId,
             'message' => $message,
             'is_read' => false,
         ]);
+
+        broadcast(new NotificationCreated($notification));
+
+        return $notification;
     }
 
     public function notifyRoles(array $roles, string $type, int $referenceId, string $message): void
