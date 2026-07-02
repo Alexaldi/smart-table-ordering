@@ -2,20 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderReceiptMail;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\StockLog;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Midtrans\Config;
 use Midtrans\Notification;
-use App\Mail\OrderReceiptMail;
-use Illuminate\Support\Facades\Mail;
-use App\Services\NotificationService;
 
 class MidtransNotificationController extends Controller
 {
-
     public function handle(Request $request)
     {
         Config::$serverKey = config('midtrans.server_key');
@@ -23,7 +22,7 @@ class MidtransNotificationController extends Controller
         Config::$isSanitized = (bool) config('midtrans.is_sanitized');
         Config::$is3ds = (bool) config('midtrans.is_3ds');
 
-        $notif = new Notification();
+        $notif = new Notification;
 
         $orderCode = $notif->order_id;
         $transactionStatus = $notif->transaction_status;
@@ -32,7 +31,7 @@ class MidtransNotificationController extends Controller
 
         $order = Order::where('order_code', $orderCode)->first();
 
-        if (!$order) {
+        if (! $order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
 
@@ -57,15 +56,15 @@ class MidtransNotificationController extends Controller
                     ]
                 );
 
-                if (!empty($order->customer_email)) {
+                if (! empty($order->customer_email)) {
                     $order->load('orderItems.menuItem', 'table');
 
                     Mail::to($order->customer_email)->send(new OrderReceiptMail($order));
                 }
 
                 if (! $wasPaidBefore) {
-                    app(NotificationService::class)->notifyRole(
-                        'dapur',
+                    app(NotificationService::class)->notifyRoles(
+                        ['dapur', 'admin'],
                         'order_paid_midtrans',
                         $order->id,
                         "Order {$order->order_code} pembayaran online berhasil dan siap dimasak."

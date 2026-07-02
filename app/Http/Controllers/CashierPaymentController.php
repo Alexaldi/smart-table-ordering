@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\KitchenQueue;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\RejectItem;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\RejectItem;
 use Illuminate\Validation\ValidationException;
-use App\Models\KitchenQueue;
-use App\Services\NotificationService;
 
 class CashierPaymentController extends Controller
 {
-
     private function dashboardData(): array
     {
         $shift = auth()->user()->shift;
@@ -24,11 +23,11 @@ class CashierPaymentController extends Controller
         $shiftEnd = $shift->endDateTimeFrom($now);
 
         $orders = Order::with([
-                'table',
-                'orderItems.menuItem',
-                'orderItems.rejectItems',
-                'payment.processedBy',
-            ])
+            'table',
+            'orderItems.menuItem',
+            'orderItems.rejectItems',
+            'payment.processedBy',
+        ])
             ->whereBetween('created_at', [$shiftStart, $shiftEnd])
             ->latest()
             ->get();
@@ -66,7 +65,7 @@ class CashierPaymentController extends Controller
     public function payCash(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'amount_paid' => ['required', 'numeric', 'min:' . $order->grand_total],
+            'amount_paid' => ['required', 'numeric', 'min:'.$order->grand_total],
         ]);
 
         $changeAmount = $validated['amount_paid'] - $order->grand_total;
@@ -92,8 +91,8 @@ class CashierPaymentController extends Controller
         });
 
         if (! $wasPaidBefore) {
-            app(NotificationService::class)->notifyRole(
-                'dapur',
+            app(NotificationService::class)->notifyRoles(
+                ['dapur', 'admin'],
                 'order_paid_cash',
                 $order->id,
                 "Order {$order->order_code} sudah dibayar cash dan siap dimasak."
@@ -145,28 +144,28 @@ class CashierPaymentController extends Controller
 
                 $reject = RejectItem::create([
                     'order_item_id' => $orderItem->id,
-                    'quantity'      => $rejectQty,
-                    'reported_by'   => auth()->id(),
-                    'reason'        => $validated['reason'],
-                    'action'        => 'remake',
-                    'cost_impact'   => $unitPrice * $rejectQty,
+                    'quantity' => $rejectQty,
+                    'reported_by' => auth()->id(),
+                    'reason' => $validated['reason'],
+                    'action' => 'remake',
+                    'cost_impact' => $unitPrice * $rejectQty,
                 ]);
 
                 // kirim ulang ke antrian dapur
                 KitchenQueue::create([
-                    'order_item_id'  => $orderItem->id,
+                    'order_item_id' => $orderItem->id,
                     'reject_item_id' => $reject->id,
-                    'quantity'       => $rejectQty,
-                    'queue_type'     => 'remake',
-                    'status'         => 'queued',
-                    'queued_at'      => now(),
+                    'quantity' => $rejectQty,
+                    'queue_type' => 'remake',
+                    'status' => 'queued',
+                    'queued_at' => now(),
                 ]);
             }
         });
 
         $message = "Remake item untuk order {$order->order_code} masuk dari kasir.";
         app(NotificationService::class)->notifyRoles(
-            ['dapur', 'admin', 'owner'],
+            ['dapur', 'admin'],
             'order_item_rejected',
             $order->id,
             $message

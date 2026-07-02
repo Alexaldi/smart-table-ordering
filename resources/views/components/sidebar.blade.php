@@ -6,6 +6,8 @@
     $isTablesActive = request()->routeIs('tables.*');
     $isCategoriesActive = request()->routeIs('categories.*');
     $isMenuActive = request()->routeIs('menu.*');
+    $isFinancialReportActive = request()->routeIs('admin.reports.financial');
+    $isOrdersActive = request()->routeIs('admin.orders.*');
 @endphp
 
 <div class="app-sidebar__overlay" data-bs-toggle="sidebar"></div>
@@ -47,6 +49,13 @@
         </li>
         <li>
             <a class="side-menu__item {{ $isMenuActive ? 'active' : '' }}" href="{{ route('menu.index') }}"><i class="side-menu__icon fa fa-coffee"></i><span class="side-menu__label">Menus</span></a>
+        </li>
+        <li><h3>REPORTS</h3></li>
+        <li>
+            <a class="side-menu__item {{ $isOrdersActive ? 'active' : '' }}" href="{{ route('admin.orders.index') }}"><i class="side-menu__icon fe fe-clipboard"></i><span class="side-menu__label">Order History</span></a>
+        </li>
+        <li>
+            <a class="side-menu__item {{ $isFinancialReportActive ? 'active' : '' }}" href="{{ route('admin.reports.financial') }}"><i class="side-menu__icon fe fe-bar-chart-2"></i><span class="side-menu__label">Financial Report</span></a>
         </li>
     </ul>
 </aside>

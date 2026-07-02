@@ -464,6 +464,26 @@
                     });
                 }
 
+                function shouldSurfaceNotification(notification) {
+                    if (!notification) {
+                        return false;
+                    }
+
+                    if (userRole === 'owner') {
+                        return false;
+                    }
+
+                    if (userRole === 'admin') {
+                        return [
+                            'order_paid_cash',
+                            'order_paid_midtrans',
+                            'order_item_rejected',
+                        ].includes(notification.type);
+                    }
+
+                    return true;
+                }
+
                 async function loadNotifications(options = {}) {
                     const shouldNotify = Boolean(options.shouldNotify);
                     const shouldDispatch = Boolean(options.shouldDispatch);
@@ -494,14 +514,16 @@
                     setBadge(data.unread_count);
                     renderNotifications(notifications);
 
-                    if (notificationsLoaded && newUnread.length > 0) {
+                    const visibleUnread = newUnread.filter(shouldSurfaceNotification);
+
+                    if (notificationsLoaded && visibleUnread.length > 0) {
                         if (shouldNotify) {
                             await playNotificationSound();
-                            showNotificationToast(newUnread);
+                            showNotificationToast(visibleUnread);
                         }
 
                         if (shouldDispatch) {
-                            newUnread.forEach(dispatchNotificationToPage);
+                            visibleUnread.forEach(dispatchNotificationToPage);
                         }
                     }
 
@@ -527,20 +549,38 @@
                                 return;
                             }
 
-                            window.dispatchEvent(new CustomEvent('sto:notification-created', {
-                                detail: incoming
-                            }));
-
                             loadNotifications({
                                 shouldNotify: false,
                                 shouldDispatch: false,
                             });
+
+                            if (!shouldSurfaceNotification(incoming)) {
+                                return;
+                            }
+
+                            window.dispatchEvent(new CustomEvent('sto:notification-created', {
+                                detail: incoming
+                            }));
 
                             showNotificationToast([incoming]);
                             playNotificationSound().catch(function() {});
                         });
 
                     return true;
+                }
+
+                function subscribeRealtimeWithRetry(attempt = 1) {
+                    if (subscribeRealtime()) {
+                        return;
+                    }
+
+                    if (attempt >= 10) {
+                        return;
+                    }
+
+                    window.setTimeout(function() {
+                        subscribeRealtimeWithRetry(attempt + 1);
+                    }, 1000);
                 }
 
                 toggle.addEventListener('click', async function() {
@@ -585,16 +625,7 @@
                 });
 
                 loadNotifications().then(function() {
-                    const realtimeReady = subscribeRealtime();
-
-                    if (!realtimeReady) {
-                        window.setInterval(function() {
-                            loadNotifications({
-                                shouldNotify: true,
-                                shouldDispatch: true,
-                            });
-                        }, 5000);
-                    }
+                    subscribeRealtimeWithRetry();
                 });
             }
 

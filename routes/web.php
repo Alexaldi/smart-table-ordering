@@ -1,20 +1,27 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DiningTableController;
-use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\FinancialReportController;
+use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\ShiftController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CashierPaymentController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Owner\OwnerDashboardController;
+use App\Http\Controllers\Owner\OwnerReportExportController;
 use App\Models\Category;
 use App\Models\DiningTable;
+use App\Models\KitchenQueue;
 use App\Models\MenuItem;
+use App\Models\Order;
 use App\Models\Shift;
 use App\Models\User;
+use App\Services\Reports\FinancialReportService;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,8 +41,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])
         ->name('login.process');
 
-    require __DIR__ . '/members/gilang.php';
-    require __DIR__ . '/members/fatur.php';
+    require __DIR__.'/members/gilang.php';
+    require __DIR__.'/members/fatur.php';
 });
 
 /*
@@ -74,7 +81,35 @@ Route::middleware('auth')->group(function () {
     */
 
     Route::middleware('role:admin')->group(function () {
-        Route::get('/dashboard', function () {
+        $adminDashboardData = function (): array {
+            $todayFilters = [
+                'start_at' => now()->startOfDay(),
+                'end_at' => now()->endOfDay(),
+                'start_date' => now()->toDateString(),
+                'end_date' => now()->toDateString(),
+                'max_date' => now()->toDateString(),
+                'shift_id' => null,
+                'payment_method' => null,
+            ];
+
+            return [
+                'todayFilters' => $todayFilters,
+                'todayReport' => app(FinancialReportService::class)->report($todayFilters),
+                'pendingPaymentOrders' => Order::where('payment_status', 'unpaid')
+                    ->whereBetween('created_at', [$todayFilters['start_at'], $todayFilters['end_at']])
+                    ->count(),
+                'activeKitchenQueues' => KitchenQueue::whereIn('status', ['queued', 'preparing'])
+                    ->whereBetween('queued_at', [$todayFilters['start_at'], $todayFilters['end_at']])
+                    ->count(),
+                'completedKitchenQueues' => KitchenQueue::where('status', 'done')
+                    ->whereBetween('done_at', [$todayFilters['start_at'], $todayFilters['end_at']])
+                    ->count(),
+            ];
+        };
+
+        Route::get('/dashboard', function () use ($adminDashboardData) {
+            $data = $adminDashboardData();
+
             return view('dashboardAdmin', [
                 'totalUsers' => User::count(),
                 'activeUsers' => User::where('is_active', true)->count(),
@@ -83,8 +118,21 @@ Route::middleware('auth')->group(function () {
                 'totalCategories' => Category::count(),
                 'totalMenus' => MenuItem::count(),
                 'activeMenus' => MenuItem::where('is_active', true)->count(),
+                'todayReport' => $data['todayReport'],
+                'pendingPaymentOrders' => $data['pendingPaymentOrders'],
+                'activeKitchenQueues' => $data['activeKitchenQueues'],
+                'completedKitchenQueues' => $data['completedKitchenQueues'],
             ]);
         })->name('dashboard');
+
+        Route::get('/dashboard/realtime', function () use ($adminDashboardData) {
+            $data = $adminDashboardData();
+
+            return response()->json([
+                'ops_html' => view('Admin.dashboard.partials.ops', $data)->render(),
+                'payments_html' => view('Admin.dashboard.partials.payments', $data)->render(),
+            ]);
+        })->name('dashboard.realtime');
 
         Route::resource('menu', MenuController::class)
             ->parameters(['menu' => 'menuItem']);
@@ -113,6 +161,21 @@ Route::middleware('auth')->group(function () {
         Route::resource('tables', DiningTableController::class);
         Route::resource('users', UserController::class);
         Route::resource('shifts', ShiftController::class);
+
+        Route::get('/admin/orders', [AdminOrderController::class, 'index'])
+            ->name('admin.orders.index');
+
+        Route::get('/admin/orders/export/{type}', [AdminOrderController::class, 'export'])
+            ->name('admin.orders.export');
+
+        Route::get('/admin/orders/{order}', [AdminOrderController::class, 'show'])
+            ->name('admin.orders.show');
+
+        Route::get('/admin/reports/financial', FinancialReportController::class)
+            ->name('admin.reports.financial');
+
+        Route::get('/admin/reports/financial/realtime', [FinancialReportController::class, 'realtime'])
+            ->name('admin.reports.financial.realtime');
     });
 
     /*
@@ -126,9 +189,14 @@ Route::middleware('auth')->group(function () {
         ->prefix('owner')
         ->name('owner.')
         ->group(function () {
-            Route::get('/dashboard', function () {
-                return view('owner.dashboard');
-            })->name('dashboard');
+            Route::get('/dashboard', OwnerDashboardController::class)
+                ->name('dashboard');
+
+            Route::get('/reports/export/excel', [OwnerReportExportController::class, 'excel'])
+                ->name('reports.export.excel');
+
+            Route::get('/reports/export/pdf', [OwnerReportExportController::class, 'pdf'])
+                ->name('reports.export.pdf');
         });
 
     /*
@@ -166,23 +234,23 @@ Route::middleware('auth')->group(function () {
     */
 
     Route::middleware(['role:dapur', 'shift.active'])
-    ->prefix('dapur')
-    ->name('dapur.')
-    ->group(function () {
-        Route::get('/dashboard', [KitchenController::class, 'index'])
-            ->name('dashboard');
+        ->prefix('dapur')
+        ->name('dapur.')
+        ->group(function () {
+            Route::get('/dashboard', [KitchenController::class, 'index'])
+                ->name('dashboard');
 
-        Route::get('/dashboard/realtime', [KitchenController::class, 'realtime'])
-            ->name('dashboard.realtime');
+            Route::get('/dashboard/realtime', [KitchenController::class, 'realtime'])
+                ->name('dashboard.realtime');
 
-        Route::get('/orders/{order}', [KitchenController::class, 'show'])
-            ->name('orders.show');
+            Route::get('/orders/{order}', [KitchenController::class, 'show'])
+                ->name('orders.show');
 
-        Route::post('/orders/{order}/prepare', [KitchenController::class, 'prepare'])
-            ->name('orders.prepare');
+            Route::post('/orders/{order}/prepare', [KitchenController::class, 'prepare'])
+                ->name('orders.prepare');
 
-        Route::post('/orders/{order}/done', [KitchenController::class, 'done'])
-            ->name('orders.done');
+            Route::post('/orders/{order}/done', [KitchenController::class, 'done'])
+                ->name('orders.done');
 
-    });
+        });
 });
