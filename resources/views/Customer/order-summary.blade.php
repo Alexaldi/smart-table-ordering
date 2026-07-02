@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Summary</title>
+    <title>Order Status</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -91,6 +91,168 @@
             align-items: center;
             justify-content: center;
             font-size: 11px;
+        }
+
+        .status-card {
+            background: linear-gradient(180deg, #fffaf4 0%, #fff 100%);
+            border: 1.5px solid #ead4bb;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 18px;
+            box-shadow: 0 10px 22px rgba(117, 75, 35, .08);
+        }
+
+        .status-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .status-kicker {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .status-title {
+            margin: 0;
+            color: var(--ink);
+            font-size: 18px;
+            line-height: 1.25;
+            font-weight: 800;
+        }
+
+        .status-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: #fff;
+            color: var(--accent-dark);
+            border: 1px solid #ead4bb;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            font-size: 20px;
+        }
+
+        .status-message {
+            color: #5f6670;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0 0 14px;
+        }
+
+        .status-code {
+            border: 1px dashed #d8b78f;
+            border-radius: 10px;
+            background: #fff;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: 72px minmax(0, 1fr) 36px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-code span {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-code strong {
+            color: var(--ink);
+            font-size: 13px;
+            text-align: right;
+            overflow-wrap: anywhere;
+            line-height: 1.25;
+        }
+
+        .copy-code-btn {
+            border: 0;
+            border-radius: 8px;
+            background: #fff4e7;
+            color: var(--accent-dark);
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            cursor: pointer;
+        }
+
+        .copy-code-btn.copied {
+            background: #e8f9ee;
+            color: #16763a;
+        }
+
+        .timeline {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .timeline-step {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px 8px;
+            color: var(--muted);
+            background: #fff;
+            min-width: 0;
+            min-height: 58px;
+        }
+
+        .timeline-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            border: 2px solid #d7dde4;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 7px;
+        }
+
+        .timeline-step:not(.done) .timeline-dot i {
+            display: none;
+        }
+
+        .timeline-step.done {
+            border-color: #bfe8cd;
+            background: #f4fff8;
+            color: #16763a;
+        }
+
+        .timeline-step.done .timeline-dot {
+            background: var(--success);
+            border-color: var(--success);
+            color: #fff;
+        }
+
+        .timeline-step.current {
+            border-color: #e6be88;
+            background: #fff8ee;
+            color: var(--accent-dark);
+        }
+
+        .timeline-step.current .timeline-dot {
+            background: #fff;
+            border-color: #d7a46f;
+            color: var(--accent-dark);
+        }
+
+        .timeline-label {
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.3;
         }
 
         .meta-grid {
@@ -241,6 +403,56 @@
             padding: 14px 16px;
         }
 
+        .customer-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 78px;
+            transform: translate(-50%, 18px);
+            width: min(calc(100% - 32px), 448px);
+            background: #111827;
+            color: #fff;
+            border-radius: 14px;
+            box-shadow: 0 18px 36px rgba(17, 24, 39, .26);
+            display: grid;
+            grid-template-columns: 38px minmax(0, 1fr);
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease, transform .2s ease;
+            z-index: 20;
+        }
+
+        .customer-toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .customer-toast-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: rgba(215, 164, 111, .18);
+            color: #f4c38e;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+        }
+
+        .customer-toast-title {
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 2px;
+        }
+
+        .customer-toast-message {
+            color: #d1d5db;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
         .btn-action {
             width: 100%;
             height: 46px;
@@ -288,14 +500,69 @@
                 border-left: 1px solid var(--line);
                 border-right: 1px solid var(--line);
             }
+
+            .customer-toast {
+                bottom: 96px;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .timeline {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .timeline-step {
+                display: grid;
+                grid-template-columns: 22px minmax(0, 1fr);
+                align-items: center;
+                gap: 8px;
+                padding: 10px;
+                min-height: 50px;
+            }
+
+            .timeline-dot {
+                margin-bottom: 0;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .status-code {
+                grid-template-columns: 1fr 36px;
+            }
+
+            .status-code span {
+                grid-column: 1 / -1;
+            }
+
+            .status-code strong {
+                text-align: left;
+            }
         }
     </style>
 </head>
 
 <body>
+    @php
+        $statusPayload = $statusPayload ?? [
+            'stage' => $order->payment_status === 'paid' ? 'paid' : 'waiting_payment',
+            'label' => $order->payment_status === 'paid' ? 'Pembayaran Diterima' : 'Menunggu Pembayaran',
+            'message' => $order->payment_status === 'paid'
+                ? 'Pembayaran sudah dikonfirmasi. Pesanan akan segera diproses.'
+                : 'Tunjukkan kode order ini ke kasir. Pesanan akan diproses setelah pembayaran dikonfirmasi.',
+            'steps' => [
+                'created' => 'done',
+                'paid' => $order->payment_status === 'paid' ? 'done' : 'current',
+                'preparing' => 'pending',
+                'ready' => $order->status === 'ready' ? 'done' : 'pending',
+            ],
+        ];
+        $stepClass = fn ($step) => in_array($statusPayload['steps'][$step] ?? 'pending', ['done', 'current'], true)
+            ? $statusPayload['steps'][$step]
+            : '';
+    @endphp
     <main class="page">
         <header class="topbar">
-            <h1>Order Summary</h1>
+            <h1>Order Status</h1>
         </header>
 
         <div class="content">
@@ -306,6 +573,43 @@
                     <span class="check"><i class="bi bi-check-lg"></i></span>
                 </strong>
             </div>
+
+            <section class="status-card" aria-live="polite">
+                <div class="status-top">
+                    <div>
+                        <div class="status-kicker">Status Pesanan</div>
+                        <h2 class="status-title" id="orderStatusLabel">{{ $statusPayload['label'] }}</h2>
+                    </div>
+                    <div class="status-icon" id="orderStatusIcon"><i class="bi bi-receipt-cutoff"></i></div>
+                </div>
+                <p class="status-message" id="orderStatusMessage">{{ $statusPayload['message'] }}</p>
+                <div class="status-code">
+                    <span>Kode order</span>
+                    <strong id="orderCodeText">{{ $order->order_code }}</strong>
+                    <button class="copy-code-btn" id="copyOrderCode" type="button" aria-label="Copy order code">
+                        <i class="bi bi-copy"></i>
+                    </button>
+                </div>
+            </section>
+
+            <section class="timeline" aria-label="Order progress">
+                <div class="timeline-step {{ $stepClass('created') }}" data-step="created">
+                    <span class="timeline-dot"><i class="bi bi-check-lg"></i></span>
+                    <div class="timeline-label">Order Dibuat</div>
+                </div>
+                <div class="timeline-step {{ $stepClass('paid') }}" data-step="paid">
+                    <span class="timeline-dot"><i class="bi bi-check-lg"></i></span>
+                    <div class="timeline-label">Pembayaran</div>
+                </div>
+                <div class="timeline-step {{ $stepClass('preparing') }}" data-step="preparing">
+                    <span class="timeline-dot"><i class="bi bi-check-lg"></i></span>
+                    <div class="timeline-label">Dapur Proses</div>
+                </div>
+                <div class="timeline-step {{ $stepClass('ready') }}" data-step="ready">
+                    <span class="timeline-dot"><i class="bi bi-check-lg"></i></span>
+                    <div class="timeline-label">Siap</div>
+                </div>
+            </section>
 
             <div class="meta-grid">
                 <div>
@@ -398,12 +702,232 @@
             </a>
         </div>
     </main>
+    <div class="customer-toast" id="customerStatusToast" role="status" aria-live="polite">
+        <div class="customer-toast-icon" id="customerToastIcon"><i class="bi bi-bell"></i></div>
+        <div>
+            <div class="customer-toast-title" id="customerToastTitle">Status diperbarui</div>
+            <div class="customer-toast-message" id="customerToastMessage">Pesanan kamu punya update baru.</div>
+        </div>
+    </div>
     <script>
     document.addEventListener("DOMContentLoaded", function () {
         const card = document.getElementById("countdown-card");
         const countdownEl = document.getElementById("countdown");
+        const statusLabel = document.getElementById("orderStatusLabel");
+        const statusMessage = document.getElementById("orderStatusMessage");
+        const statusIcon = document.getElementById("orderStatusIcon");
+        const orderCodeText = document.getElementById("orderCodeText");
+        const copyOrderCode = document.getElementById("copyOrderCode");
+        const toast = document.getElementById("customerStatusToast");
+        const toastIcon = document.getElementById("customerToastIcon");
+        const toastTitle = document.getElementById("customerToastTitle");
+        const toastMessage = document.getElementById("customerToastMessage");
         let finishTime = null;
         let tickInterval = null;
+        let lastStage = @json($statusPayload['stage']);
+        let toastTimer = null;
+        let audioContext = null;
+
+        const statusIcons = {
+            waiting_payment: 'bi-cash-coin',
+            paid: 'bi-check-circle-fill',
+            preparing: 'bi-cup-hot',
+            ready: 'bi-bag-check',
+        };
+
+        const toastCopy = {
+            paid: {
+                title: 'Pembayaran diterima',
+                message: 'Pesanan kamu akan segera masuk ke dapur.',
+                icon: 'bi-check-circle-fill',
+            },
+            preparing: {
+                title: 'Pesanan diproses',
+                message: 'Dapur sedang menyiapkan pesanan kamu.',
+                icon: 'bi-cup-hot',
+            },
+            ready: {
+                title: 'Pesanan siap',
+                message: 'Silakan ambil pesanan atau tunggu staf mengantar ke meja.',
+                icon: 'bi-bag-check',
+            },
+        };
+
+        function unlockSound() {
+            if (audioContext) {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().catch(function() {});
+                }
+
+                return;
+            }
+
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+
+            audioContext = new AudioContext();
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().catch(function() {});
+            }
+        }
+
+        ['pointerdown', 'touchstart', 'keydown', 'click'].forEach(function(eventName) {
+            document.addEventListener(eventName, unlockSound, {
+                once: true,
+                passive: true,
+            });
+        });
+
+        function playStatusSound() {
+            unlockSound();
+
+            if (!audioContext || audioContext.state !== 'running') {
+                return;
+            }
+
+            const startAt = audioContext.currentTime;
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.0001, startAt);
+            gain.gain.exponentialRampToValueAtTime(0.08, startAt + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.34);
+            gain.connect(audioContext.destination);
+
+            [660, 880].forEach(function(frequency, index) {
+                const oscillator = audioContext.createOscillator();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(frequency, startAt + (index * 0.11));
+                oscillator.connect(gain);
+                oscillator.start(startAt + (index * 0.11));
+                oscillator.stop(startAt + 0.18 + (index * 0.11));
+            });
+        }
+
+        function showCustomerToast(stage, fallbackLabel, fallbackMessage) {
+            if (!toast) return;
+
+            const copy = toastCopy[stage] || {
+                title: fallbackLabel || 'Status diperbarui',
+                message: fallbackMessage || 'Pesanan kamu punya update baru.',
+                icon: statusIcons[stage] || 'bi-bell',
+            };
+
+            toastTitle.textContent = copy.title;
+            toastMessage.textContent = copy.message;
+            toastIcon.innerHTML = `<i class="bi ${copy.icon}"></i>`;
+            toast.classList.add('show');
+
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() {
+                toast.classList.remove('show');
+            }, 4200);
+
+            playStatusSound();
+            if (navigator.vibrate) {
+                navigator.vibrate(stage === 'ready' ? [120, 70, 120] : [120]);
+            }
+        }
+
+        function updateStatusUI(data) {
+            if (!data) return;
+
+            statusLabel.textContent = data.label || 'Status Pesanan';
+            statusMessage.textContent = data.message || '';
+            statusIcon.innerHTML = `<i class="bi ${statusIcons[data.stage] || 'bi-receipt-cutoff'}"></i>`;
+
+            ['created', 'paid', 'preparing', 'ready'].forEach(function(step) {
+                const element = document.querySelector(`[data-step="${step}"]`);
+                if (!element) return;
+                element.classList.remove('done', 'current');
+
+                const state = data.steps && data.steps[step] ? data.steps[step] : 'pending';
+                if (state === 'done' || state === 'current') {
+                    element.classList.add(state);
+                }
+            });
+        }
+
+        if (copyOrderCode && orderCodeText) {
+            function showCopySuccess() {
+                copyOrderCode.classList.add('copied');
+                copyOrderCode.innerHTML = '<i class="bi bi-check-lg"></i>';
+
+                setTimeout(function() {
+                    copyOrderCode.classList.remove('copied');
+                    copyOrderCode.innerHTML = '<i class="bi bi-copy"></i>';
+                }, 1400);
+            }
+
+            function fallbackCopy(text) {
+                const temp = document.createElement('textarea');
+                temp.value = text;
+                temp.setAttribute('readonly', '');
+                temp.style.position = 'fixed';
+                temp.style.left = '-9999px';
+                temp.style.top = '0';
+                document.body.appendChild(temp);
+                temp.focus();
+                temp.select();
+
+                let copied = false;
+                try {
+                    copied = document.execCommand('copy');
+                } catch (error) {
+                    copied = false;
+                }
+
+                temp.remove();
+                return copied;
+            }
+
+            copyOrderCode.addEventListener('click', async function() {
+                const code = orderCodeText.textContent.trim();
+
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(code);
+                        showCopySuccess();
+                        return;
+                    }
+
+                    if (fallbackCopy(code)) {
+                        showCopySuccess();
+                        return;
+                    }
+
+                    window.prompt('Copy kode order:', code);
+                } catch (error) {
+                    if (fallbackCopy(code)) {
+                        showCopySuccess();
+                        return;
+                    }
+
+                    window.prompt('Copy kode order:', code);
+                }
+            });
+        }
+
+        async function pollOrderStatus() {
+            try {
+                const res = await fetch("{{ route('customer-menu.order-status', ['token' => $token, 'order' => $order->order_code]) }}", {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!res.ok) return;
+
+                const data = await res.json();
+                updateStatusUI(data);
+
+                if (data.stage && data.stage !== lastStage) {
+                    showCustomerToast(data.stage, data.label, data.message);
+                    lastStage = data.stage;
+                }
+            } catch (e) {
+                console.error("gagal ambil status pesanan", e);
+            }
+        }
 
         function tick() {
             if (!finishTime) return;
@@ -443,7 +967,9 @@
         }
 
         pollStatus();
+        pollOrderStatus();
         setInterval(pollStatus, 5000); // cek ke server tiap 5 detik
+        setInterval(pollOrderStatus, 3000);
     });
     </script>
 </body>

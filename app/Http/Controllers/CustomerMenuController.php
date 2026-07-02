@@ -4,17 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\DiningTable;
+use App\Models\KitchenQueue;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\StockLog;
+use App\Services\MidtransService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use App\Services\MidtransService;
-use App\Services\NotificationService;
-use App\Models\StockLog;
-use App\Models\KitchenQueue;
 
 class CustomerMenuController extends Controller
 {
@@ -33,7 +33,7 @@ class CustomerMenuController extends Controller
      */
     private function cartKey(DiningTable $table): string
     {
-        return 'customer_cart_table_' . $table->id;
+        return 'customer_cart_table_'.$table->id;
     }
 
     private function menuPricing(MenuItem $menuItem): array
@@ -331,6 +331,7 @@ class CustomerMenuController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['message' => 'Cart masih kosong.'], 422);
             }
+
             return back()->with('error', 'Cart masih kosong.');
         }
 
@@ -349,7 +350,7 @@ class CustomerMenuController extends Controller
 
                     if ($quantity > $menuItem->stock) {
                         throw ValidationException::withMessages([
-                            'cart' => 'Stock ' . $menuItem->name . ' tidak cukup.',
+                            'cart' => 'Stock '.$menuItem->name.' tidak cukup.',
                         ]);
                     }
 
@@ -373,7 +374,7 @@ class CustomerMenuController extends Controller
                 }
 
                 $order = Order::create([
-                    'order_code' => 'ORD-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4)),
+                    'order_code' => 'ORD-'.now()->format('YmdHis').'-'.Str::upper(Str::random(4)),
                     'table_id' => $table->id,
                     'session_token' => session()->getId(),
                     'customer_name' => $validated['customer_name'] ?? null,
@@ -407,7 +408,7 @@ class CustomerMenuController extends Controller
                     KitchenQueue::create([
                         'order_item_id' => $orderItem->id,
                         'status' => 'queued',
-                        'quantity'      => $item['quantity'],
+                        'quantity' => $item['quantity'],
                         'queued_at' => now(),
                     ]);
 
@@ -441,9 +442,10 @@ class CustomerMenuController extends Controller
             throw $exception;
         } catch (\Throwable $exception) {
             if ($request->wantsJson()) {
-                return response()->json(['message' => 'Checkout gagal: ' . $exception->getMessage()], 500);
+                return response()->json(['message' => 'Checkout gagal: '.$exception->getMessage()], 500);
             }
-            return back()->with('error', 'Checkout gagal: ' . $exception->getMessage());
+
+            return back()->with('error', 'Checkout gagal: '.$exception->getMessage());
         }
 
         // Jika pembayaran tunai, langsung kembalikan response JSON dengan order_code dan summary_url
@@ -471,14 +473,15 @@ class CustomerMenuController extends Controller
 
         try {
             $order->load('orderItems.menuItem');
-            $snapToken = (new MidtransService())->getSnapToken($order);
+            $snapToken = (new MidtransService)->getSnapToken($order);
         } catch (\Throwable $exception) {
             if ($request->wantsJson()) {
-                return response()->json(['message' => 'Gagal membuat pembayaran: ' . $exception->getMessage()], 500);
+                return response()->json(['message' => 'Gagal membuat pembayaran: '.$exception->getMessage()], 500);
             }
+
             return redirect()
                 ->route('customer-menu.index', ['token' => $token])
-                ->with('error', 'Gagal membuat pembayaran: ' . $exception->getMessage());
+                ->with('error', 'Gagal membuat pembayaran: '.$exception->getMessage());
         }
 
         return response()->json([
@@ -525,6 +528,8 @@ class CustomerMenuController extends Controller
                 ->addMinutes($estimatedMinutes);
         }
 
+        $statusPayload = $this->customerOrderStatus($order);
+
         return view(
             'customer.order-summary',
             compact(
@@ -532,23 +537,19 @@ class CustomerMenuController extends Controller
                 'table',
                 'token',
                 'countdownEnd',
-                'estimatedMinutes'
+                'estimatedMinutes',
+                'statusPayload'
             )
         );
     }
-    
+
     public function orderStatus(string $token, Order $order)
     {
         $table = $this->getTableByToken($token);
 
         abort_if($order->table_id !== $table->id, 404);
 
-        return response()->json([
-            'order_code' => $order->order_code,
-            'status' => $order->status,
-            'payment_status' => $order->payment_status,
-            'is_paid' => $order->payment_status === 'paid',
-        ]);
+        return response()->json($this->customerOrderStatus($order));
     }
 
     public function countdownStatus(string $token, Order $order)
@@ -577,8 +578,65 @@ class CustomerMenuController extends Controller
         }
 
         return response()->json([
-            'has_queue'     => (bool) $preparingQueue,
+            'has_queue' => (bool) $preparingQueue,
             'countdown_end' => $countdownEnd?->toIso8601String(),
         ]);
+    }
+
+    private function customerOrderStatus(Order $order): array
+    {
+        $order->loadMissing('orderItems');
+
+        $itemIds = $order->orderItems->pluck('id');
+        $hasActiveKitchenProcess = $order->payment_status === 'paid' && KitchenQueue::whereIn('order_item_id', $itemIds)
+            ->whereIn('status', ['preparing', 'done'])
+            ->exists();
+
+        $stage = match (true) {
+            $order->payment_status !== 'paid' => 'waiting_payment',
+            $order->status === 'ready' => 'ready',
+            $hasActiveKitchenProcess || in_array($order->status, ['processing', 'preparing'], true) => 'preparing',
+            default => 'paid',
+        };
+
+        $copy = [
+            'waiting_payment' => [
+                'label' => 'Menunggu Pembayaran',
+                'message' => 'Tunjukkan kode order ini ke kasir. Pesanan akan diproses setelah pembayaran dikonfirmasi.',
+            ],
+            'paid' => [
+                'label' => 'Pembayaran Diterima',
+                'message' => 'Pembayaran sudah dikonfirmasi. Pesanan akan segera masuk ke dapur.',
+            ],
+            'preparing' => [
+                'label' => 'Pesanan Disiapkan',
+                'message' => 'Dapur sedang menyiapkan pesanan kamu.',
+            ],
+            'ready' => [
+                'label' => 'Pesanan Siap',
+                'message' => 'Pesanan sudah siap. Silakan ambil atau tunggu staf mengantar ke meja.',
+            ],
+        ];
+
+        return [
+            'order_code' => $order->order_code,
+            'status' => $order->status,
+            'payment_status' => $order->payment_status,
+            'payment_method' => $order->payment_method,
+            'is_paid' => $order->payment_status === 'paid',
+            'stage' => $stage,
+            'label' => $copy[$stage]['label'],
+            'message' => $copy[$stage]['message'],
+            'steps' => [
+                'created' => 'done',
+                'paid' => $order->payment_status === 'paid' ? 'done' : 'current',
+                'preparing' => match (true) {
+                    $order->status === 'ready' => 'done',
+                    $hasActiveKitchenProcess || in_array($order->status, ['processing', 'preparing'], true) => 'current',
+                    default => 'pending',
+                },
+                'ready' => $order->status === 'ready' ? 'done' : 'pending',
+            ],
+        ];
     }
 }

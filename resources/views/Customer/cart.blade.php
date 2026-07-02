@@ -237,23 +237,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="cashInstructionModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0">
-                <div class="modal-body text-center p-4">
-                    <i class="bi bi-cash-coin fs-1 text-success"></i>
-                    <h5 class="fw-bold mt-3">Please Complete Your Payment</h5>
-                    <p class="text-muted small mb-3">
-                        Please proceed to the cashier and complete your payment. Your order will be prepared once the payment is confirmed.
-                    </p>
-
-                    <div class="fw-bold mb-2" id="cashOrderCode"></div>
-                    <div class="text-muted small">Waiting for cashier confirmation...</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ $clientKey }}"></script>
     <script>
@@ -266,7 +249,6 @@
 
             const paymentChoiceModal = new bootstrap.Modal(document.getElementById('paymentChoiceModal'));
             const cashlessDetailModal = new bootstrap.Modal(document.getElementById('cashlessDetailModal'));
-            const cashInstructionModal = new bootstrap.Modal(document.getElementById('cashInstructionModal'));
 
             checkoutForm.addEventListener('submit', function (event) {
                 event.preventDefault();
@@ -315,25 +297,7 @@
                     }
 
                     if (data.payment_choice === 'cash') {
-                        document.getElementById('cashOrderCode').textContent = data.order_code;
-                        cashInstructionModal.show();
-
-                        const checker = setInterval(async function () {
-                            const response = await fetch(data.status_url, {
-                                headers: {
-                                    'Accept': 'application/json',
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                }
-                            });
-
-                            const statusData = await response.json();
-
-                            if (statusData.is_paid) {
-                                clearInterval(checker);
-                                window.location.href = data.summary_url;
-                            }
-                        }, 3000);
-
+                        window.location.href = data.summary_url;
                         return;
                     }
 
